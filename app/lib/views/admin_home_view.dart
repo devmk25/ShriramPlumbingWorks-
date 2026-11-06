@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme.dart';
 import '../core/localization.dart';
@@ -75,6 +76,63 @@ class _AdminHomeViewState extends State<AdminHomeView> {
     }
   }
 
+  Future<bool> _showExitDialog(BuildContext context, String lang) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.exit_to_app_rounded, color: Colors.red.shade600, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                lang == 'mr' ? 'बाहेर पडायचे आहे का?' : 'Exit App?',
+                style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          lang == 'mr'
+              ? 'तुम्हाला श्रीराम प्लंबिंग वर्क्स ॲपमधून बाहेर पडायचे आहे का?'
+              : 'Are you sure you want to exit Shriram Plumbing Works?',
+          style: const TextStyle(fontSize: 13, color: AppTheme.textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(
+              lang == 'mr' ? 'रद्द करा' : 'Cancel',
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+            child: Text(
+              lang == 'mr' ? 'बाहेर पडा' : 'Exit',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AppProvider>(context);
@@ -93,7 +151,22 @@ class _AdminHomeViewState extends State<AdminHomeView> {
       _buildReportsTab(provider, lang),
     ];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) async {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+        } else {
+          final shouldExit = await _showExitDialog(context, lang);
+          if (shouldExit == true) {
+            SystemNavigator.pop();
+          }
+        }
+      },
+      child: Scaffold(
       backgroundColor: AppTheme.bgLight,
       appBar: AppBar(
         leading: Padding(
@@ -200,7 +273,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           ],
         ),
       ),
-    );
+    ));
   }
 
   // 1. DASHBOARD TAB

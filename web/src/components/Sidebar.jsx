@@ -13,7 +13,7 @@ import {
 import { useApp } from '../context/AppContext';
 
 export const Sidebar = () => {
-  const { activeTab, setActiveTab, t } = useApp();
+  const { activeTab, setActiveTab, t, language } = useApp();
 
   const navItems = [
     { id: 'dashboard', label: t.navDashboard, icon: LayoutDashboard },
@@ -30,7 +30,7 @@ export const Sidebar = () => {
     <aside className="w-64 bg-white border-r border-slate-200 p-3.5 shrink-0 h-full flex flex-col justify-between overflow-y-auto">
       <div className="space-y-1">
         <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          मेनू
+          {language === 'mr' ? 'मेनू (MENU)' : 'MAIN MENU'}
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;

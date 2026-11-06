@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { loadStoredData, saveData, subscribeToCloudData, syncToCloud } from '../services/dataService';
 import { translations } from '../i18n/translations';
 
@@ -11,13 +11,44 @@ export const AppProvider = ({ children }) => {
     // Default logged in as Admin for instant convenience
     return data.users.find(u => u.role === 'ADMIN') || data.users[0];
   });
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTabState] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const hashTab = window.location.hash.replace('#', '');
+      if (['dashboard', 'builders', 'sites', 'attendance', 'workers', 'advances', 'reports', 'settings'].includes(hashTab)) {
+        return hashTab;
+      }
+    }
+    return 'dashboard';
+  });
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    if (typeof window !== 'undefined' && window.history) {
+      window.history.pushState({ tab }, '', `#${tab}`);
+    }
+  };
+
+  useEffect(() => {
+    const handlePopState = (e) => {
+      if (e.state && e.state.tab) {
+        setActiveTabState(e.state.tab);
+      } else {
+        setActiveTabState('dashboard');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [selectedSlipWorker, setSelectedSlipWorker] = useState(null);
+
+  const isCloudUpdate = useRef(false);
+  const isInitialMount = useRef(true);
 
   // Subscribe to real-time cloud updates from Firebase Firestore
   useEffect(() => {
     const unsubscribe = subscribeToCloudData((cloudData) => {
       if (cloudData && typeof cloudData === 'object') {
+        isCloudUpdate.current = true;
         setData(prev => ({
           ...prev,
           ...cloudData,
@@ -32,6 +63,20 @@ export const AppProvider = ({ children }) => {
   // Sync to persistence layer (LocalStorage + Firebase Cloud) whenever state changes
   useEffect(() => {
     saveData(data);
+
+    // Don't push to cloud on initial mount (prevents blanking out cloud data)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Don't echo cloud updates back to the cloud (prevents write loop)
+    if (isCloudUpdate.current) {
+      isCloudUpdate.current = false;
+      return;
+    }
+
+    // Only push to cloud when user performs an action on web
     syncToCloud(data);
   }, [data]);
 

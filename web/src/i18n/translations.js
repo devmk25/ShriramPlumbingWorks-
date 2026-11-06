@@ -1,8 +1,8 @@
 export const translations = {
   mr: {
     // App & Nav
-    appName: "निर्माण-खातावणी",
-    appSub: "कंत्राटदार दैनंदिन नोंद व मजुरी प्रणाली",
+    appName: "श्रीराम प्लंबिंग वर्क्स, मिरजवाडी",
+    appSub: "धुमुस, कोअर कटिंग व सिव्हिल कंत्राटदार खातावणी",
     languageSwitch: "English",
     logout: "लॉगआउट",
     welcome: "स्वागत आहे",
