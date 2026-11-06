@@ -67,7 +67,14 @@ export const WorkersPage = ({ onOpenAdvanceModal, onOpenSlipModal }) => {
 
       {/* Workers Grid Cards - Bento Architecture */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-        {workers.map((worker) => {
+        {workers.length === 0 ? (
+          <div className="col-span-full bento-card p-12 text-center text-slate-400">
+            <Users className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+            <p className="font-bold text-sm text-slate-700">अजून कोणताही कामगार जोडलेला नाही.</p>
+            <p className="text-xs text-slate-400 mt-1">नवीन कामगार जोडण्यासाठी वरील "+ {t.addWorker}" बटनावर क्लिक करा.</p>
+          </div>
+        ) : (
+          workers.map((worker) => {
           const khata = calculateWorkerKhata(worker.id);
           const { fullDays, halfDays, totalDaysEquivalent, currentWagesEarned, totalAdvancesTaken, netCashPayable } = khata;
 
@@ -180,7 +187,7 @@ export const WorkersPage = ({ onOpenAdvanceModal, onOpenSlipModal }) => {
               </div>
             </div>
           );
-        })}
+        }))}
       </div>
 
       {/* Add Worker Modal */}

@@ -128,7 +128,14 @@ export const AttendancePage = () => {
 
       {/* Worker Attendance Matrix - Bento Card */}
       <div className="bento-card overflow-hidden">
-        <div className="divide-y divide-slate-100">
+        {workers.length === 0 ? (
+          <div className="p-12 text-center text-slate-400">
+            <AlertCircle className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+            <p className="font-bold text-sm text-slate-700">हजेरी नोंदवण्यासाठी आधी कामगार जोडा.</p>
+            <p className="text-xs text-slate-400 mt-1">कामगार जोडण्यासाठी 'कामगार (Workers)' टॅबवर जा.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100">
           {workers.map((worker) => {
             const currentRec = attendanceState[worker.id] || { status: 'FULL', siteId: sites[0]?.id || '' };
             const status = currentRec.status;
@@ -214,6 +221,7 @@ export const AttendancePage = () => {
             );
           })}
         </div>
+        )}
       </div>
     </div>
   );

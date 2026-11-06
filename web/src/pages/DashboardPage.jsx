@@ -20,10 +20,7 @@ export const DashboardPage = () => {
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [voiceNote, setVoiceNote] = useState('');
-  const [savedNotes, setSavedNotes] = useState([
-    "गोखले रेसिडेन्सीवर आज २५०० sq.ft धुमुस पूर्ण झाले, १२ होल कटिंग केले.",
-    "उद्या सकाळी पाटील बंगल्यावर कॉम्पॅक्टर मशिन व ४ मजूर पाठवायचे आहेत."
-  ]);
+  const [savedNotes, setSavedNotes] = useState([]);
 
   // Calculations for today
   const activeSitesCount = sites.filter(s => s.status === 'ACTIVE').length;
@@ -220,11 +217,17 @@ export const DashboardPage = () => {
               <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 अलिकडील व्हॉईस नोंदी:
               </div>
-              {savedNotes.map((note, idx) => (
-                <div key={idx} className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 text-xs text-slate-700 font-medium leading-relaxed">
-                  {note}
+              {savedNotes.length === 0 ? (
+                <div className="p-3 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-center text-xs text-slate-400">
+                  अजून कोणतीही व्हॉईस नोंद नाही.
                 </div>
-              ))}
+              ) : (
+                savedNotes.map((note, idx) => (
+                  <div key={idx} className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 text-xs text-slate-700 font-medium leading-relaxed">
+                    {note}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -248,7 +251,14 @@ export const DashboardPage = () => {
           </div>
 
           <div className="space-y-3">
-            {sites.map((site) => {
+            {sites.length === 0 ? (
+              <div className="p-8 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 text-xs text-slate-400">
+                <Building2 className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                <p className="font-bold text-slate-600">अजून कोणतीही साईट जोडलेली नाही.</p>
+                <p className="mt-1 text-[11px]">नवीन साईट जोडण्यासाठी "सर्व साईट्स पहा" वर क्लिक करा.</p>
+              </div>
+            ) : (
+              sites.map((site) => {
               const siteWork = dailyWork.filter(d => d.siteId === site.id);
               const totalSqft = siteWork.reduce((sum, d) => sum + (d.dhumusSqft || 0), 0);
               const totalHoles = siteWork.reduce((sum, d) => sum + (d.coreCuttingHoles || 0), 0);
@@ -290,7 +300,7 @@ export const DashboardPage = () => {
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
       </div>

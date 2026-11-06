@@ -123,23 +123,7 @@ class AppProvider with ChangeNotifier {
     ),
   ];
 
-  final List<BuilderModel> _builders = [
-    BuilderModel(id: 'b_01', firmName: 'त्रिमूर्ती कन्स्ट्रक्शन', engineerName: 'इंजी. अरविंद खोत', phone: '9823011111', location: 'आष्टा'),
-    BuilderModel(id: 'b_02', firmName: 'वाडकर असोसिएट', engineerName: 'इंजी. B. B. वाडकर', phone: '9823022222', location: 'मिरजवाडी'),
-    BuilderModel(id: 'b_03', firmName: 'मोरया कन्स्ट्रक्शन', engineerName: 'इंजी. संतोष बसुगडे', phone: '9823033333', location: 'सांगली'),
-    BuilderModel(id: 'b_04', firmName: 'प्रतिक कन्स्ट्रक्शन', engineerName: 'इंजी. प्रतिक गायकवाड', phone: '9823044444', location: 'इस्लामपूर'),
-    BuilderModel(id: 'b_05', firmName: 'पूर्वा कन्स्ट्रक्शन', engineerName: 'इंजी. हारुडे साहेब', phone: '9823055555', location: 'आष्टा'),
-    BuilderModel(id: 'b_06', firmName: 'अंजनेय कन्स्ट्रक्शन', engineerName: 'इंजी. उदय पाटील', phone: '9823066666', location: 'सांगली'),
-    BuilderModel(id: 'b_07', firmName: 'पिरॅमिड कन्स्ट्रक्शन', engineerName: 'इंजी. मदन पाटील', phone: '9823077777', location: 'मिरज'),
-    BuilderModel(id: 'b_08', firmName: 'सांबुचे कन्स्ट्रक्शन', engineerName: 'इंजी. सचिन सांबुचे', phone: '9823088888', location: 'आष्टा'),
-    BuilderModel(id: 'b_09', firmName: 'जाधव असोसिएट्स', engineerName: 'इंजी. प्रसन्न जाधव', phone: '9823099999', location: 'पलूस'),
-    BuilderModel(id: 'b_10', firmName: 'स्वप्नपूर्ती कन्स्ट्रक्शन', engineerName: 'इंजी. माधव इंगवले', phone: '9823100000', location: 'मिरजवाडी'),
-    BuilderModel(id: 'b_11', firmName: 'गायकवाड कन्स्ट्रक्शन', engineerName: 'इंजी. किशोर गायकवाड', phone: '9823111111', location: 'आष्टा'),
-    BuilderModel(id: 'b_12', firmName: 'सावंत असोसिएट्स', engineerName: 'इंजी. सचिन सावंत', phone: '9823122222', location: 'सांगली'),
-    BuilderModel(id: 'b_13', firmName: 'कसाले कन्स्ट्रक्शन', engineerName: 'इंजी. प्रज्वल कसाले', phone: '9823133333', location: 'इस्लामपूर'),
-    BuilderModel(id: 'b_14', firmName: 'जाधव बिल्डर्स', engineerName: 'इंजी. अमित जाधव', phone: '9823144444', location: 'आष्टा'),
-    BuilderModel(id: 'b_15', firmName: 'पाटील असोसिएट्स', engineerName: 'इंजी. अमरसिंह पाटील', phone: '9823155555', location: 'मिरज'),
-  ];
+  final List<BuilderModel> _builders = [];
 
   final List<WorkCategoryModel> _workCategories = [
     WorkCategoryModel(id: 'cat_01', name: 'प्लंबिंग (नवीन कामे)', unit: 'पॉईंट्स / काम', defaultRate: 0),
@@ -151,145 +135,15 @@ class AppProvider with ChangeNotifier {
     WorkCategoryModel(id: 'cat_07', name: 'वॉल & RCC कटिंग', unit: 'रनिंग फूट (R.ft)', defaultRate: 40),
   ];
 
-  final List<Site> _sites = [
-    Site(
-      id: 'site_01',
-      name: 'त्रिमूर्ती रेसिडेन्सी साईट',
-      builderId: 'b_01',
-      builderName: 'त्रिमूर्ती कन्स्ट्रक्शन (इंजी. अरविंद खोत)',
-      location: 'आष्टा बायपास',
-      status: 'ACTIVE',
-      createdAt: '2026-10-01',
-    ),
-    Site(
-      id: 'site_02',
-      name: 'वाडकर बंगला साईट',
-      builderId: 'b_02',
-      builderName: 'वाडकर असोसिएट (इंजी. B. B. वाडकर)',
-      location: 'मिरजवाडी',
-      status: 'ACTIVE',
-      createdAt: '2026-10-05',
-    ),
-    Site(
-      id: 'site_03',
-      name: 'मोरया हाईट्स',
-      builderId: 'b_03',
-      builderName: 'मोरया कन्स्ट्रक्शन (इंजी. संतोष बसुगडे)',
-      location: 'सांगली रोड',
-      status: 'ACTIVE',
-      createdAt: '2026-10-10',
-    ),
-  ];
+  final List<Site> _sites = [];
 
-  final List<Worker> _workers = [
-    Worker(
-      id: 'w_01',
-      fullName: 'राजू संभाजी पाटील',
-      phone: '9822001122',
-      dailyRate: 600,
-      openingBalance: 1200,
-      status: 'ACTIVE',
-      skill: 'धुमुस मशिन ऑपरेटर',
-    ),
-    Worker(
-      id: 'w_02',
-      fullName: 'तानाजी विठ्ठल खोत',
-      phone: '9822003344',
-      dailyRate: 650,
-      openingBalance: 800,
-      status: 'ACTIVE',
-      skill: 'कोअर कटिंग हेड',
-    ),
-    Worker(
-      id: 'w_03',
-      fullName: 'सचिन विष्णू माने',
-      phone: '9822005566',
-      dailyRate: 550,
-      openingBalance: 500,
-      status: 'ACTIVE',
-      skill: 'मशिन हेल्पर',
-    ),
-    Worker(
-      id: 'w_04',
-      fullName: 'सर्जेराव बापू कदम',
-      phone: '9822007788',
-      dailyRate: 600,
-      openingBalance: 0,
-      status: 'ACTIVE',
-      skill: 'प्लंबिंग हेड',
-    ),
-  ];
+  final List<Worker> _workers = [];
 
-  final List<DailyWorkLog> _dailyWork = [
-    DailyWorkLog(
-      id: 'dw_01',
-      builderId: 'b_01',
-      builderName: 'त्रिमूर्ती कन्स्ट्रक्शन (इंजी. अरविंद खोत)',
-      siteId: 'site_01',
-      siteName: 'त्रिमूर्ती रेसिडेन्सी साईट',
-      categoryId: 'cat_03',
-      categoryName: 'नवीन साईट धुमसणे (Dhumus Compactor)',
-      date: '2026-10-25',
-      quantity: 2500,
-      unit: 'sq.ft',
-      rate: 4.5,
-      totalAmount: 11250,
-      notes: 'आज बेसमेंटचे पूर्ण धुमुस काम झाले.',
-    ),
-    DailyWorkLog(
-      id: 'dw_02',
-      builderId: 'b_01',
-      builderName: 'त्रिमूर्ती कन्स्ट्रक्शन (इंजी. अरविंद खोत)',
-      siteId: 'site_01',
-      siteName: 'त्रिमूर्ती रेसिडेन्सी साईट',
-      categoryId: 'cat_05',
-      categoryName: 'कोअर कटिंग (Core Cutting)',
-      date: '2026-10-25',
-      quantity: 12,
-      unit: 'होल्स संख्या',
-      rate: 350,
-      totalAmount: 4200,
-      notes: '१२ होल्स कोर कटिंग पूर्ण केले.',
-    ),
-  ];
+  final List<DailyWorkLog> _dailyWork = [];
 
-  final List<AttendanceRecord> _attendance = [
-    AttendanceRecord(
-      id: 'att_01',
-      workerId: 'w_01',
-      workerName: 'राजू संभाजी पाटील',
-      siteId: 'site_01',
-      siteName: 'त्रिमूर्ती रेसिडेन्सी साईट',
-      date: '2026-10-25',
-      status: 'FULL',
-      multiplier: 1.0,
-      wageEarned: 600,
-    ),
-    AttendanceRecord(
-      id: 'att_02',
-      workerId: 'w_02',
-      workerName: 'तानाजी विठ्ठल खोत',
-      siteId: 'site_01',
-      siteName: 'त्रिमूर्ती रेसिडेन्सी साईट',
-      date: '2026-10-25',
-      status: 'FULL',
-      multiplier: 1.0,
-      wageEarned: 650,
-    ),
-  ];
+  final List<AttendanceRecord> _attendance = [];
 
-  final List<AdvanceRecord> _advances = [
-    AdvanceRecord(
-      id: 'adv_01',
-      workerId: 'w_01',
-      workerName: 'राजू संभाजी पाटील',
-      siteId: 'site_01',
-      date: '2026-10-25',
-      amount: 500,
-      reason: 'दवाखाना खर्च',
-      paymentMode: 'CASH',
-    ),
-  ];
+  final List<AdvanceRecord> _advances = [];
 
   // Getters
   String get language => _language;

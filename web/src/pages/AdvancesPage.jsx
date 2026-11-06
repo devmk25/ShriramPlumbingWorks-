@@ -220,19 +220,27 @@ export const AdvancesPage = ({ preselectedWorkerId }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {advances.map(item => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="py-3 text-slate-500 font-mono">{item.date}</td>
-                    <td className="py-3 font-bold text-slate-800">{item.workerName}</td>
-                    <td className="py-3 font-extrabold text-red-600">₹{item.amount?.toLocaleString()}</td>
-                    <td className="py-3 text-slate-600">{item.reason}</td>
-                    <td className="py-3 text-right">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                        {item.paymentMode === 'CASH' ? 'रोख' : 'UPI'}
-                      </span>
+                {advances.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-slate-400">
+                      अजून कोणतीही उचल नोंदवलेली नाही.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  advances.map(item => (
+                    <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3 text-slate-500 font-mono">{item.date}</td>
+                      <td className="py-3 font-bold text-slate-800">{item.workerName}</td>
+                      <td className="py-3 font-extrabold text-red-600">₹{item.amount?.toLocaleString()}</td>
+                      <td className="py-3 text-slate-600">{item.reason}</td>
+                      <td className="py-3 text-right">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                          {item.paymentMode === 'CASH' ? 'रोख' : 'UPI'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

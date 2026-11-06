@@ -322,36 +322,42 @@ export const SitesWorkPage = () => {
             </h3>
 
             <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-              {sites.map(site => (
-                <div
-                  key={site.id}
-                  className="p-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-xs text-slate-900">{site.name}</span>
-                    <button
-                      onClick={() => {
-                        if (window.confirm(`'${site.name}' साईट हटवायची का?`)) {
-                          deleteSite(site.id);
-                        }
-                      }}
-                      className="text-slate-400 hover:text-red-600 p-1"
-                      title="साईट हटवा"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  {site.builderName && (
-                    <div className="text-[11px] font-semibold text-blue-600 mt-0.5">
-                      🏛️ {site.builderName}
-                    </div>
-                  )}
-                  <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
-                    <MapPin className="w-3 h-3 text-slate-400" />
-                    <span>{site.location}</span>
-                  </div>
+              {sites.length === 0 ? (
+                <div className="p-6 text-center text-slate-400 text-xs">
+                  अजून कोणतीही साईट जोडलेली नाही.
                 </div>
-              ))}
+              ) : (
+                sites.map(site => (
+                  <div
+                    key={site.id}
+                    className="p-3.5 rounded-2xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-xs text-slate-900">{site.name}</span>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`'${site.name}' साईट हटवायची का?`)) {
+                            deleteSite(site.id);
+                          }
+                        }}
+                        className="text-slate-400 hover:text-red-600 p-1"
+                        title="साईट हटवा"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {site.builderName && (
+                      <div className="text-[11px] font-semibold text-blue-600 mt-0.5">
+                        🏛️ {site.builderName}
+                      </div>
+                    )}
+                    <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 text-slate-400" />
+                      <span>{site.location}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -361,42 +367,48 @@ export const SitesWorkPage = () => {
               <span>अलिकडील काम नोंदी ({dailyWork.length})</span>
             </h3>
             <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-              {dailyWork.map(item => (
-                <div key={item.id} className="p-3 bg-slate-50 rounded-xl text-xs border border-slate-100">
-                  <div className="flex justify-between items-start font-bold text-slate-800">
-                    <div>
-                      <span>{item.siteName}</span>
-                      <div className="text-[10px] text-blue-600 font-medium">
-                        {item.builderName || ''}
+              {dailyWork.length === 0 ? (
+                <div className="p-6 text-center text-slate-400 text-xs">
+                  अजून कोणतीही काम नोंद नाही.
+                </div>
+              ) : (
+                dailyWork.map(item => (
+                  <div key={item.id} className="p-3 bg-slate-50 rounded-xl text-xs border border-slate-100">
+                    <div className="flex justify-between items-start font-bold text-slate-800">
+                      <div>
+                        <span>{item.siteName}</span>
+                        <div className="text-[10px] text-blue-600 font-medium">
+                          {item.builderName || ''}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-emerald-600 font-extrabold">₹{item.totalAmount?.toLocaleString()}</span>
+                        <button
+                          onClick={() => {
+                            if (window.confirm("ही कामाची नोंद हटवायची का?")) {
+                              deleteDailyWork(item.id);
+                            }
+                          }}
+                          className="text-slate-400 hover:text-red-500 p-0.5"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-emerald-600 font-extrabold">₹{item.totalAmount?.toLocaleString()}</span>
-                      <button
-                        onClick={() => {
-                          if (window.confirm("ही कामाची नोंद हटवायची का?")) {
-                            deleteDailyWork(item.id);
-                          }
-                        }}
-                        className="text-slate-400 hover:text-red-500 p-0.5"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                      <span className="font-semibold text-slate-700">
+                        {item.categoryName}: {item.quantity} {item.unit} @ ₹{item.rate}
+                      </span>
+                      <span className="text-[10px] text-slate-400">{item.date}</span>
                     </div>
+                    {item.notes && (
+                      <div className="text-[11px] text-slate-600 italic mt-1 bg-white p-1.5 rounded-md border border-slate-100">
+                        "{item.notes}"
+                      </div>
+                    )}
                   </div>
-                  <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
-                    <span className="font-semibold text-slate-700">
-                      {item.categoryName}: {item.quantity} {item.unit} @ ₹{item.rate}
-                    </span>
-                    <span className="text-[10px] text-slate-400">{item.date}</span>
-                  </div>
-                  {item.notes && (
-                    <div className="text-[11px] text-slate-600 italic mt-1 bg-white p-1.5 rounded-md border border-slate-100">
-                      "{item.notes}"
-                    </div>
-                  )}
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

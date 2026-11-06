@@ -8,7 +8,7 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
 
   const [mainReportType, setMainReportType] = useState('workers'); // 'workers' | 'builders'
   const [activeTier, setActiveTier] = useState('monthly'); // 'daily' | 'weekly' | 'monthly' | 'yearly'
-  const [selectedMonth, setSelectedMonth] = useState('2026-10');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().substring(0, 7));
   const [selectedBuilderId, setSelectedBuilderId] = useState(builders?.[0]?.id || '');
   const [builderInvoiceModal, setBuilderInvoiceModal] = useState(null);
 
@@ -28,7 +28,7 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
     : null;
 
   const totalAllBuildersBilling = (dailyWork || [])
-    .filter(w => w.date.startsWith(selectedMonth))
+    .filter(w => w?.date?.startsWith(selectedMonth))
     .reduce((sum, w) => sum + (Number(w.totalAmount) || 0), 0);
 
   return (
