@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { loadStoredData, saveData, subscribeToCloudData, syncToCloud } from '../services/dataService';
+import { 
+  loadStoredData, 
+  saveData, 
+  subscribeToAllCollections, 
+  cloudSaveItem, 
+  cloudDeleteItem, 
+  cloudBatchAttendance 
+} from '../services/dataService';
 import { translations } from '../i18n/translations';
 
 const AppContext = createContext();
@@ -41,43 +48,43 @@ export const AppProvider = ({ children }) => {
   }, []);
   const [selectedSlipWorker, setSelectedSlipWorker] = useState(null);
 
-  const isCloudUpdate = useRef(false);
-  const isInitialMount = useRef(true);
-
-  // Subscribe to real-time cloud updates from Firebase Firestore
+  // 100x IQ: Granular Real-time Subscriptions (Reads ONLY collections that change)
   useEffect(() => {
-    const unsubscribe = subscribeToCloudData((cloudData) => {
-      if (cloudData && typeof cloudData === 'object') {
-        isCloudUpdate.current = true;
-        setData(prev => ({
-          ...prev,
-          ...cloudData,
-        }));
+    const unsubscribe = subscribeToAllCollections({
+      onFirmProfile: (profile) => {
+        setData(prev => ({ ...prev, firmProfile: { ...prev.firmProfile, ...profile } }));
+      },
+      onWorkers: (workers) => {
+        setData(prev => ({ ...prev, workers }));
+      },
+      onBuilders: (builders) => {
+        setData(prev => ({ ...prev, builders }));
+      },
+      onSites: (sites) => {
+        setData(prev => ({ ...prev, sites }));
+      },
+      onDailyWork: (dailyWork) => {
+        setData(prev => ({ ...prev, dailyWork }));
+      },
+      onAttendance: (attendance) => {
+        setData(prev => ({ ...prev, attendance }));
+      },
+      onAdvances: (advances) => {
+        setData(prev => ({ ...prev, advances }));
+      },
+      onWorkCategories: (cats) => {
+        setData(prev => ({ ...prev, workCategories: cats }));
       }
     });
+
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
 
-  // Sync to persistence layer (LocalStorage + Firebase Cloud) whenever state changes
+  // Fast offline-first local cache (Zero Firestore write overhead here)
   useEffect(() => {
     saveData(data);
-
-    // Don't push to cloud on initial mount (prevents blanking out cloud data)
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-
-    // Don't echo cloud updates back to the cloud (prevents write loop)
-    if (isCloudUpdate.current) {
-      isCloudUpdate.current = false;
-      return;
-    }
-
-    // Only push to cloud when user performs an action on web
-    syncToCloud(data);
   }, [data]);
 
   const t = translations[language] || translations.mr;
@@ -105,10 +112,11 @@ export const AppProvider = ({ children }) => {
 
   // Firm Profile
   const updateFirmProfile = (updatedProfile) => {
-    setData(prev => ({
-      ...prev,
-      firmProfile: { ...prev.firmProfile, ...updatedProfile }
-    }));
+    setData(prev => {
+      const merged = { ...prev.firmProfile, ...updatedProfile };
+      cloudSaveItem('firm_profile', 'main', merged);
+      return { ...prev, firmProfile: merged };
+    });
   };
 
   // Sites
@@ -128,6 +136,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       sites: [newSite, ...prev.sites]
     }));
+    cloudSaveItem('sites', newSite.id, newSite);
     return newSite;
   };
 
@@ -136,6 +145,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       sites: prev.sites.filter(s => s.id !== siteId)
     }));
+    cloudDeleteItem('sites', siteId);
   };
 
   // Builders CRUD
@@ -151,14 +161,17 @@ export const AppProvider = ({ children }) => {
       ...prev,
       builders: [newB, ...(prev.builders || [])]
     }));
+    cloudSaveItem('builders', newB.id, newB);
     return newB;
   };
 
   const updateBuilder = (builderId, updated) => {
-    setData(prev => ({
-      ...prev,
-      builders: (prev.builders || []).map(b => b.id === builderId ? { ...b, ...updated } : b)
-    }));
+    setData(prev => {
+      const updatedBuilders = (prev.builders || []).map(b => b.id === builderId ? { ...b, ...updated } : b);
+      const bObj = updatedBuilders.find(b => b.id === builderId);
+      if (bObj) cloudSaveItem('builders', builderId, bObj);
+      return { ...prev, builders: updatedBuilders };
+    });
   };
 
   const deleteBuilder = (builderId) => {
@@ -166,6 +179,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       builders: (prev.builders || []).filter(b => b.id !== builderId)
     }));
+    cloudDeleteItem('builders', builderId);
   };
 
   // Work Categories CRUD
@@ -181,6 +195,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       workCategories: [...(prev.workCategories || []), newCat]
     }));
+    cloudSaveItem('work_categories', newCat.id, newCat);
     return newCat;
   };
 
@@ -189,6 +204,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       workCategories: (prev.workCategories || []).filter(c => c.id !== catId)
     }));
+    cloudDeleteItem('work_categories', catId);
   };
 
   // Workers
@@ -209,6 +225,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       workers: [newWorker, ...prev.workers]
     }));
+    cloudSaveItem('workers', newWorker.id, newWorker);
     return newWorker;
   };
 
@@ -217,6 +234,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       workers: prev.workers.filter(w => w.id !== workerId)
     }));
+    cloudDeleteItem('workers', workerId);
   };
 
   // Daily Work Log (Dynamic Category, Builder, Unit, Rate, Amount)
@@ -249,6 +267,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       dailyWork: [newLog, ...prev.dailyWork]
     }));
+    cloudSaveItem('daily_work', newLog.id, newLog);
     return newLog;
   };
 
@@ -257,6 +276,7 @@ export const AppProvider = ({ children }) => {
       ...prev,
       dailyWork: prev.dailyWork.filter(w => w.id !== workId)
     }));
+    cloudDeleteItem('daily_work', workId);
   };
 
   // Builder Invoicing / Billing calculation
@@ -293,7 +313,7 @@ export const AppProvider = ({ children }) => {
     };
   };
 
-  // Fast Bulk Attendance
+  // Fast Bulk Attendance (100x IQ Atomic Batch with Deterministic ID)
   const saveBulkAttendance = (records) => {
     // records: array of { workerId, siteId, date, status }
     const newEntries = records.map(rec => {
@@ -302,8 +322,11 @@ export const AppProvider = ({ children }) => {
       const mult = rec.status === 'FULL' ? 1.0 : rec.status === 'HALF' ? 0.5 : 0;
       const rate = worker ? worker.dailyRate : 600;
 
+      // Deterministic key: att_${workerId}_${date} prevents duplicate attendance records
+      const attId = rec.id || `att_${rec.workerId}_${rec.date}`;
+
       return {
-        id: `att_${Date.now()}_${rec.workerId}`,
+        id: attId,
         workerId: rec.workerId,
         workerName: worker ? worker.fullName : "कामगार",
         siteId: rec.siteId || (data.sites[0] ? data.sites[0].id : ""),
@@ -324,6 +347,9 @@ export const AppProvider = ({ children }) => {
         attendance: [...newEntries, ...filteredExisting]
       };
     });
+
+    // 100x IQ: Commit only changed records in 1 atomic Firestore batch (zero duplicates)
+    cloudBatchAttendance(newEntries);
   };
 
   // Advances (उचल)
@@ -347,7 +373,16 @@ export const AppProvider = ({ children }) => {
       ...prev,
       advances: [newAdv, ...prev.advances]
     }));
+    cloudSaveItem('advances', newAdv.id, newAdv);
     return newAdv;
+  };
+
+  const deleteAdvance = (advanceId) => {
+    setData(prev => ({
+      ...prev,
+      advances: prev.advances.filter(a => a.id !== advanceId)
+    }));
+    cloudDeleteItem('advances', advanceId);
   };
 
   // Exact Calculation Formula from Client Specification
@@ -428,6 +463,7 @@ export const AppProvider = ({ children }) => {
         deleteDailyWork,
         saveBulkAttendance,
         addAdvance,
+        deleteAdvance,
         calculateWorkerKhata,
         calculateBuilderBilling
       }}

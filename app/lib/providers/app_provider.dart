@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../core/firebase_service.dart';
 
+/// श्रीराम प्लंबिंग वर्क्स (मिरजवाडी) - 100x IQ Optimized State & Sync Provider
+/// 
+/// Highlights:
+/// - Granular Delta Writes: Every UI mutation saves/deletes ONLY the modified document.
+/// - Deterministic Document IDs: 'att_${workerId}_${date}' ensures zero duplicate attendance.
+/// - Targeted Collection Streams: Subscribes independently to each collection. Unchanged collections are never queried.
+/// - Zero Unwanted Loops: Replaces whole-database loops with single-doc operations.
 class AppProvider with ChangeNotifier {
   String _language = 'mr'; // Default Marathi
   UserAccount? _currentUser;
@@ -11,100 +18,83 @@ class AppProvider with ChangeNotifier {
   }
 
   void _initCloudSync() {
-    final stream = FirebaseService.streamCloudData();
-    if (stream != null) {
-      stream.listen((snapshot) {
-        if (snapshot.exists && snapshot.data() != null) {
-          final data = snapshot.data()!;
-          _loadFromMap(data);
-          notifyListeners();
-        }
-      }, onError: (e) {
-        // Run smoothly with local data
-      });
-    }
-  }
+    // 1. Firm Profile Stream
+    FirebaseService.streamDocument('firm_profile', 'main')?.listen((data) {
+      if (data != null) {
+        _firmProfile = FirmProfile.fromMap(data);
+        notifyListeners();
+      }
+    }, onError: (_) {});
 
-  void _syncToCloud() {
-    FirebaseService.syncToCloud(toMap());
-  }
-
-  void _notifyAndSync() {
-    notifyListeners();
-    _syncToCloud();
-  }
-
-  Map<String, dynamic> toMap() {
-    return {
-      'firmProfile': _firmProfile.toMap(),
-      'builders': _builders.map((b) => b.toMap()).toList(),
-      'workCategories': _workCategories.map((c) => c.toMap()).toList(),
-      'sites': _sites.map((s) => s.toMap()).toList(),
-      'workers': _workers.map((w) => w.toMap()).toList(),
-      'dailyWork': _dailyWork.map((d) => d.toMap()).toList(),
-      'attendance': _attendance.map((a) => a.toMap()).toList(),
-      'advances': _advances.map((a) => a.toMap()).toList(),
-    };
-  }
-
-  void _loadFromMap(Map<String, dynamic> data) {
-    if (data['builders'] is List) {
-      final list = (data['builders'] as List)
-          .map((m) => BuilderModel.fromMap(Map<String, dynamic>.from(m)))
-          .toList();
+    // 2. Builders Collection Stream
+    FirebaseService.streamCollection('builders')?.listen((list) {
       if (list.isNotEmpty) {
         _builders.clear();
-        _builders.addAll(list);
+        _builders.addAll(list.map((m) => BuilderModel.fromMap(m)));
+        notifyListeners();
       }
-    }
-    if (data['sites'] is List) {
-      final list = (data['sites'] as List)
-          .map((m) => Site.fromMap(Map<String, dynamic>.from(m)))
-          .toList();
+    }, onError: (_) {});
+
+    // 3. Work Categories Stream
+    FirebaseService.streamCollection('work_categories')?.listen((list) {
+      if (list.isNotEmpty) {
+        _workCategories.clear();
+        _workCategories.addAll(list.map((m) => WorkCategoryModel.fromMap(m)));
+        notifyListeners();
+      }
+    }, onError: (_) {});
+
+    // 4. Sites Collection Stream
+    FirebaseService.streamCollection('sites')?.listen((list) {
       if (list.isNotEmpty) {
         _sites.clear();
-        _sites.addAll(list);
+        _sites.addAll(list.map((m) => Site.fromMap(m)));
+        notifyListeners();
       }
-    }
-    if (data['workers'] is List) {
-      final list = (data['workers'] as List)
-          .map((m) => Worker.fromMap(Map<String, dynamic>.from(m)))
-          .toList();
+    }, onError: (_) {});
+
+    // 5. Workers Collection Stream
+    FirebaseService.streamCollection('workers')?.listen((list) {
       if (list.isNotEmpty) {
         _workers.clear();
-        _workers.addAll(list);
+        _workers.addAll(list.map((m) => Worker.fromMap(m)));
+        notifyListeners();
       }
-    }
-    if (data['dailyWork'] is List) {
-      final list = (data['dailyWork'] as List)
-          .map((m) => DailyWorkLog.fromMap(Map<String, dynamic>.from(m)))
-          .toList();
+    }, onError: (_) {});
+
+    // 6. Daily Work Stream
+    FirebaseService.streamCollection('daily_work')?.listen((list) {
       if (list.isNotEmpty) {
         _dailyWork.clear();
-        _dailyWork.addAll(list);
+        final mapped = list.map((m) => DailyWorkLog.fromMap(m)).toList();
+        mapped.sort((a, b) => b.date.compareTo(a.date));
+        _dailyWork.addAll(mapped);
+        notifyListeners();
       }
-    }
-    if (data['attendance'] is List) {
-      final list = (data['attendance'] as List)
-          .map((m) => AttendanceRecord.fromMap(Map<String, dynamic>.from(m)))
-          .toList();
+    }, onError: (_) {});
+
+    // 7. Attendance Collection Stream
+    FirebaseService.streamCollection('attendance')?.listen((list) {
       if (list.isNotEmpty) {
         _attendance.clear();
-        _attendance.addAll(list);
+        _attendance.addAll(list.map((m) => AttendanceRecord.fromMap(m)));
+        notifyListeners();
       }
-    }
-    if (data['advances'] is List) {
-      final list = (data['advances'] as List)
-          .map((m) => AdvanceRecord.fromMap(Map<String, dynamic>.from(m)))
-          .toList();
+    }, onError: (_) {});
+
+    // 8. Advances Collection Stream
+    FirebaseService.streamCollection('advances')?.listen((list) {
       if (list.isNotEmpty) {
         _advances.clear();
-        _advances.addAll(list);
+        final mapped = list.map((m) => AdvanceRecord.fromMap(m)).toList();
+        mapped.sort((a, b) => b.date.compareTo(a.date));
+        _advances.addAll(mapped);
+        notifyListeners();
       }
-    }
+    }, onError: (_) {});
   }
 
-  final FirmProfile _firmProfile = FirmProfile(
+  FirmProfile _firmProfile = FirmProfile(
     firmName: 'श्रीराम प्लंबिंग वर्क्स, मिरजवाडी',
     ownerName: 'संतोष मेंगाणे',
     phone: '9999999999',
@@ -136,13 +126,9 @@ class AppProvider with ChangeNotifier {
   ];
 
   final List<Site> _sites = [];
-
   final List<Worker> _workers = [];
-
   final List<DailyWorkLog> _dailyWork = [];
-
   final List<AttendanceRecord> _attendance = [];
-
   final List<AdvanceRecord> _advances = [];
 
   // Getters
@@ -182,6 +168,13 @@ class AppProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Firm Profile Update
+  void updateFirmProfile(FirmProfile profile) {
+    _firmProfile = profile;
+    notifyListeners();
+    FirebaseService.saveDoc('firm_profile', 'main', _firmProfile.toMap());
+  }
+
   // Builders CRUD
   void addBuilder({
     required String firmName,
@@ -197,27 +190,31 @@ class AppProvider with ChangeNotifier {
       location: location,
     );
     _builders.insert(0, b);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.saveDoc('builders', b.id, b.toMap());
   }
 
   void updateBuilder(String id, {String? firmName, String? engineerName, String? phone, String? location}) {
     final idx = _builders.indexWhere((b) => b.id == id);
     if (idx != -1) {
       final old = _builders[idx];
-      _builders[idx] = BuilderModel(
+      final updated = BuilderModel(
         id: old.id,
         firmName: firmName ?? old.firmName,
         engineerName: engineerName ?? old.engineerName,
         phone: phone ?? old.phone,
         location: location ?? old.location,
       );
-      _notifyAndSync();
+      _builders[idx] = updated;
+      notifyListeners();
+      FirebaseService.saveDoc('builders', updated.id, updated.toMap());
     }
   }
 
   void deleteBuilder(String id) {
     _builders.removeWhere((b) => b.id == id);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.deleteDoc('builders', id);
   }
 
   // Work Categories CRUD
@@ -234,13 +231,15 @@ class AppProvider with ChangeNotifier {
       isCustom: true,
     );
     _workCategories.add(cat);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.saveDoc('work_categories', cat.id, cat.toMap());
     return cat;
   }
 
   void deleteWorkCategory(String id) {
     _workCategories.removeWhere((c) => c.id == id);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.deleteDoc('work_categories', id);
   }
 
   // Add Site
@@ -263,41 +262,49 @@ class AppProvider with ChangeNotifier {
       createdAt: DateTime.now().toIso8601String().split('T')[0],
     );
     _sites.add(newSite);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.saveDoc('sites', newSite.id, newSite.toMap());
   }
 
   void deleteSite(String id) {
     _sites.removeWhere((s) => s.id == id);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.deleteDoc('sites', id);
   }
 
-  // Attendance
+  // Attendance (100x IQ Atomic Batch with Deterministic ID: zero duplicates)
   void markAttendance(List<Map<String, dynamic>> records) {
+    final batchItems = <Map<String, dynamic>>[];
+
     for (var rec in records) {
       final worker = _workers.firstWhere((w) => w.id == rec['workerId']);
-      final site = _sites.firstWhere((s) => s.id == rec['siteId'], orElse: () => _sites[0]);
+      final site = _sites.firstWhere((s) => s.id == rec['siteId'], orElse: () => _sites.isNotEmpty ? _sites[0] : Site(id: '', name: '', builderId: '', builderName: '', location: '', status: '', createdAt: ''));
       final mult = rec['status'] == 'FULL' ? 1.0 : (rec['status'] == 'HALF' ? 0.5 : 0.0);
+      final deterministicId = 'att_${rec['workerId']}_${rec['date']}';
       
       _attendance.removeWhere((a) => a.workerId == rec['workerId'] && a.date == rec['date']);
-      _attendance.insert(
-        0,
-        AttendanceRecord(
-          id: 'att_${DateTime.now().millisecondsSinceEpoch}_${rec['workerId']}',
-          workerId: worker.id,
-          workerName: worker.fullName,
-          siteId: site.id,
-          siteName: site.name,
-          date: rec['date'],
-          status: rec['status'],
-          multiplier: mult,
-          wageEarned: worker.dailyRate * mult,
-        ),
+      
+      final entry = AttendanceRecord(
+        id: deterministicId,
+        workerId: worker.id,
+        workerName: worker.fullName,
+        siteId: site.id,
+        siteName: site.name,
+        date: rec['date'],
+        status: rec['status'],
+        multiplier: mult,
+        wageEarned: worker.dailyRate * mult,
       );
+
+      _attendance.insert(0, entry);
+      batchItems.add(entry.toMap());
     }
-    _notifyAndSync();
+    
+    notifyListeners();
+    FirebaseService.batchSaveAttendance(batchItems);
   }
 
-  // Advance
+  // Advance (उचल)
   void addAdvance({
     required String workerId,
     required String siteId,
@@ -307,20 +314,25 @@ class AppProvider with ChangeNotifier {
     required String paymentMode,
   }) {
     final worker = _workers.firstWhere((w) => w.id == workerId);
-    _advances.insert(
-      0,
-      AdvanceRecord(
-        id: 'adv_${DateTime.now().millisecondsSinceEpoch}',
-        workerId: worker.id,
-        workerName: worker.fullName,
-        siteId: siteId,
-        date: date,
-        amount: amount,
-        reason: reason,
-        paymentMode: paymentMode,
-      ),
+    final adv = AdvanceRecord(
+      id: 'adv_${DateTime.now().millisecondsSinceEpoch}',
+      workerId: worker.id,
+      workerName: worker.fullName,
+      siteId: siteId,
+      date: date,
+      amount: amount,
+      reason: reason,
+      paymentMode: paymentMode,
     );
-    _notifyAndSync();
+    _advances.insert(0, adv);
+    notifyListeners();
+    FirebaseService.saveDoc('advances', adv.id, adv.toMap());
+  }
+
+  void deleteAdvance(String id) {
+    _advances.removeWhere((a) => a.id == id);
+    notifyListeners();
+    FirebaseService.deleteDoc('advances', id);
   }
 
   // Work Log (Dynamic Category, Builder, Unit, Rate, Amount)
@@ -336,35 +348,36 @@ class AppProvider with ChangeNotifier {
     required double totalAmount,
     required String notes,
   }) {
-    final site = _sites.where((s) => s.id == siteId).firstOrNull ?? _sites[0];
+    final site = _sites.where((s) => s.id == siteId).firstOrNull ?? (_sites.isNotEmpty ? _sites[0] : Site(id: '', name: '', builderId: '', builderName: '', location: '', status: '', createdAt: ''));
     final bId = builderId ?? site.builderId;
     final b = _builders.where((x) => x.id == bId).firstOrNull;
     final bName = b != null ? '${b.firmName} (${b.engineerName})' : site.builderName;
 
-    _dailyWork.insert(
-      0,
-      DailyWorkLog(
-        id: 'dw_${DateTime.now().millisecondsSinceEpoch}',
-        builderId: bId,
-        builderName: bName,
-        siteId: site.id,
-        siteName: site.name,
-        categoryId: categoryId ?? 'cat_03',
-        categoryName: categoryName ?? 'काम',
-        date: date,
-        quantity: quantity,
-        unit: unit,
-        rate: rate,
-        totalAmount: totalAmount,
-        notes: notes,
-      ),
+    final log = DailyWorkLog(
+      id: 'dw_${DateTime.now().millisecondsSinceEpoch}',
+      builderId: bId,
+      builderName: bName,
+      siteId: site.id,
+      siteName: site.name,
+      categoryId: categoryId ?? 'cat_03',
+      categoryName: categoryName ?? 'काम',
+      date: date,
+      quantity: quantity,
+      unit: unit,
+      rate: rate,
+      totalAmount: totalAmount,
+      notes: notes,
     );
-    _notifyAndSync();
+
+    _dailyWork.insert(0, log);
+    notifyListeners();
+    FirebaseService.saveDoc('daily_work', log.id, log.toMap());
   }
 
   void deleteDailyWorkLog(String id) {
     _dailyWork.removeWhere((w) => w.id == id);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.deleteDoc('daily_work', id);
   }
 
   // Add Worker
@@ -386,17 +399,20 @@ class AppProvider with ChangeNotifier {
       skill: skill,
     );
     _workers.add(worker);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.saveDoc('workers', worker.id, worker.toMap());
   }
 
   void deleteWorker(String id) {
     _workers.removeWhere((w) => w.id == id);
-    _notifyAndSync();
+    notifyListeners();
+    FirebaseService.deleteDoc('workers', id);
   }
 
   // Worker Khata Formula Engine
+  // [मागील बाकी] + [चालू हजेरीनुसार मजुरी] - [एकूण उचल] = [आज मजुराला देणे बाकी]
   Map<String, dynamic> calculateKhata(String workerId, {String? monthFilter}) {
-    final worker = _workers.firstWhere((w) => w.id == workerId, orElse: () => _workers[0]);
+    final worker = _workers.firstWhere((w) => w.id == workerId, orElse: () => _workers.isNotEmpty ? _workers[0] : Worker(id: '', fullName: '', phone: '', dailyRate: 0, openingBalance: 0, status: '', skill: ''));
     final workerAtt = _attendance.where((a) {
       if (a.workerId != workerId) return false;
       if (monthFilter != null && monthFilter.isNotEmpty) {

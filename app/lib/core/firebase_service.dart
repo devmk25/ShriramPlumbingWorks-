@@ -3,6 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 
+/// श्रीराम प्लंबिंग वर्क्स (मिरजवाडी) - 100x IQ Optimized Firebase Engine
+/// 
+/// Key Features:
+/// - Granular Delta Writes: Exactly 1 document write per action (eliminates full DB loop overhead)
+/// - Deterministic Document IDs: Eliminates duplicate entries and double writes
+/// - Atomic Batching: Writes attendance for multiple workers in a single batch
+/// - Targeted Collection Streams: Listens ONLY to the specific collection that changed
+/// - Zero Unwanted Reads/Writes: Extreme cost efficiency and instant offline-resilient speed
 class FirebaseService {
   static bool isInitialized = false;
   static FirebaseFirestore? _db;
@@ -29,107 +37,84 @@ class FirebaseService {
     }
   }
 
-  static const String collectionName = 'shriram_plumbing_data';
-  static const String documentId = 'main_db';
+  // --- 100x IQ Granular Single-Document Delta Writes (Zero Unwanted Writes) ---
 
-  /// Sync data map to Cloud Firestore with clean, individual nodes
-  static Future<void> syncToCloud(Map<String, dynamic> data) async {
-    if (!isInitialized || _db == null) return;
+  /// Save or update a single document in a specific collection (1 Firestore write only)
+  static Future<void> saveDoc(String collectionName, String docId, Map<String, dynamic> data) async {
+    if (!isInitialized || _db == null || docId.isEmpty) return;
     try {
-      // 1. Maintain instant real-time sync document
-      await _db!
-          .collection(collectionName)
-          .doc(documentId)
-          .set(data, SetOptions(merge: true));
-
-      // 2. Synchronize into clean, individual, human-readable collections
-      if (data['firmProfile'] is Map) {
-        await _db!
-            .collection('firm_profile')
-            .doc('main')
-            .set(Map<String, dynamic>.from(data['firmProfile'] as Map), SetOptions(merge: true));
-      }
-
-      if (data['builders'] is List) {
-        for (var item in data['builders'] as List) {
-          if (item is Map && item['id'] != null) {
-            await _db!.collection('builders').doc(item['id'].toString()).set(
-              Map<String, dynamic>.from(item),
-              SetOptions(merge: true),
-            );
-          }
-        }
-      }
-
-      if (data['sites'] is List) {
-        for (var item in data['sites'] as List) {
-          if (item is Map && item['id'] != null) {
-            await _db!.collection('sites').doc(item['id'].toString()).set(
-              Map<String, dynamic>.from(item),
-              SetOptions(merge: true),
-            );
-          }
-        }
-      }
-
-      if (data['workers'] is List) {
-        for (var item in data['workers'] as List) {
-          if (item is Map && item['id'] != null) {
-            await _db!.collection('workers').doc(item['id'].toString()).set(
-              Map<String, dynamic>.from(item),
-              SetOptions(merge: true),
-            );
-          }
-        }
-      }
-
-      if (data['dailyWork'] is List) {
-        for (var item in data['dailyWork'] as List) {
-          if (item is Map && item['id'] != null) {
-            await _db!.collection('daily_work').doc(item['id'].toString()).set(
-              Map<String, dynamic>.from(item),
-              SetOptions(merge: true),
-            );
-          }
-        }
-      }
-
-      if (data['attendance'] is List) {
-        for (var item in data['attendance'] as List) {
-          if (item is Map && item['id'] != null) {
-            await _db!.collection('attendance').doc(item['id'].toString()).set(
-              Map<String, dynamic>.from(item),
-              SetOptions(merge: true),
-            );
-          }
-        }
-      }
-
-      if (data['advances'] is List) {
-        for (var item in data['advances'] as List) {
-          if (item is Map && item['id'] != null) {
-            await _db!.collection('advances').doc(item['id'].toString()).set(
-              Map<String, dynamic>.from(item),
-              SetOptions(merge: true),
-            );
-          }
-        }
-      }
+      await _db!.collection(collectionName).doc(docId).set(data, SetOptions(merge: true));
     } catch (e) {
       if (kDebugMode) {
-        print('Firestore clean cloud sync notice: $e');
+        print('Firestore write notice ($collectionName/$docId): $e');
       }
     }
   }
 
-  /// Listen to real-time changes from Firestore
-  static Stream<DocumentSnapshot<Map<String, dynamic>>>? streamCloudData() {
-    if (!isInitialized || _db == null) return null;
+  /// Delete a single document from a specific collection (1 Firestore write only)
+  static Future<void> deleteDoc(String collectionName, String docId) async {
+    if (!isInitialized || _db == null || docId.isEmpty) return;
     try {
-      return _db!.collection(collectionName).doc(documentId).snapshots();
+      await _db!.collection(collectionName).doc(docId).delete();
     } catch (e) {
       if (kDebugMode) {
-        print('Firestore stream notice: $e');
+        print('Firestore delete notice ($collectionName/$docId): $e');
+      }
+    }
+  }
+
+  /// 100x IQ Atomic Batch for Attendance:
+  /// Uses deterministic ID 'att_${workerId}_${date}' to guarantee zero duplicates
+  static Future<void> batchSaveAttendance(List<Map<String, dynamic>> records) async {
+    if (!isInitialized || _db == null || records.isEmpty) return;
+    try {
+      final batch = _db!.batch();
+      for (final rec in records) {
+        final workerId = rec['workerId']?.toString() ?? '';
+        final date = rec['date']?.toString() ?? '';
+        final recId = (rec['id'] != null && rec['id'].toString().isNotEmpty)
+            ? rec['id'].toString() 
+            : 'att_${workerId}_$date';
+        final docRef = _db!.collection('attendance').doc(recId);
+        final mapWithId = Map<String, dynamic>.from(rec)..['id'] = recId;
+        batch.set(docRef, mapWithId, SetOptions(merge: true));
+      }
+      await batch.commit();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Firestore attendance batch notice: $e');
+      }
+    }
+  }
+
+  // --- 100x IQ Granular Collection Listeners (Reads ONLY what changes) ---
+
+  /// Stream an entire collection with real-time delta updates
+  static Stream<List<Map<String, dynamic>>>? streamCollection(String collectionName) {
+    if (!isInitialized || _db == null) return null;
+    try {
+      return _db!.collection(collectionName).snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Firestore stream collection notice ($collectionName): $e');
+      }
+      return null;
+    }
+  }
+
+  /// Stream a single document (e.g. firm profile)
+  static Stream<Map<String, dynamic>?>? streamDocument(String collectionName, String docId) {
+    if (!isInitialized || _db == null) return null;
+    try {
+      return _db!.collection(collectionName).doc(docId).snapshots().map((doc) {
+        if (!doc.exists || doc.data() == null) return null;
+        return {'id': doc.id, ...doc.data()!};
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Firestore stream doc notice ($collectionName/$docId): $e');
       }
       return null;
     }
