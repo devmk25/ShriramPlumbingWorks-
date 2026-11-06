@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "297426173791",
+    "project_id": "shriram-plumbing",
+    "storage_bucket": "shriram-plumbing.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:297426173791:android:77b41135b21b2f5c1e00ea",
+        "android_client_info": {
+          "package_name": "com.mas.shriramplumbing"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC60VuNvt7V0josVM1Gn1AvefmQM_Fh-LM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

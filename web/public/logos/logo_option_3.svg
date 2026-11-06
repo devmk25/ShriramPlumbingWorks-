@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="crestBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E3A8A"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="emeraldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="goldRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <filter id="sealShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Clean Background -->
+  <rect width="512" height="512" rx="96" fill="#FFFFFF" filter="url(#sealShadow)"/>
+
+  <!-- Outer Contractor Seal Border -->
+  <circle cx="256" cy="256" r="220" fill="none" stroke="url(#crestBlue)" stroke-width="8"/>
+  <circle cx="256" cy="256" r="206" fill="none" stroke="url(#goldRing)" stroke-width="2" stroke-dasharray="6 4"/>
+  <circle cx="256" cy="256" r="150" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="3"/>
+
+  <!-- Curved Text Path -->
+  <path id="topCurve" d="M 96,256 A 160,160 0 1,1 416,256" fill="none"/>
+  <path id="bottomCurve" d="M 416,256 A 160,160 0 0,1 96,256" fill="none"/>
+
+  <text font-family="'Mukta', sans-serif" font-size="20" font-weight="900" fill="#1E3A8A" letter-spacing="3">
+    <textPath href="#topCurve" startOffset="50%" text-anchor="middle">
+      श्रीराम प्लंबिंग वर्क्स • मिरजवाडी
+    </textPath>
+  </text>
+  <text font-family="'Inter', sans-serif" font-size="13" font-weight="800" fill="#059669" letter-spacing="4">
+    <textPath href="#bottomCurve" startOffset="50%" text-anchor="middle">
+      ★ DHUMUS • CORE CUTTING • RCC ★
+    </textPath>
+  </text>
+
+  <!-- Central Crest Insignia -->
+  <!-- Auspicious Trishul / Arrowhead merged with Pipeline Valve -->
+  <path d="M 256 160 L 256 280" stroke="url(#crestBlue)" stroke-width="12" stroke-linecap="round"/>
+  <polygon points="256,135 240,165 272,165" fill="url(#goldRing)"/>
+
+  <!-- Water Drop in Center -->
+  <path d="M 256 200 C 256 200, 226 240, 226 260 C 226 277, 239 290, 256 290 C 273 290, 286 277, 286 260 C 286 240, 256 200, 256 200 Z" 
+        fill="url(#emeraldAccent)"/>
+
+  <!-- Heavy Foundation Base Compactor -->
+  <rect x="206" y="300" width="100" height="14" rx="4" fill="url(#crestBlue)"/>
+  <line x1="190" y1="324" x2="322" y2="324" stroke="url(#goldRing)" stroke-width="4" stroke-linecap="round"/>
+  <line x1="210" y1="334" x2="302" y2="334" stroke="#64748B" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Stars -->
+  <text x="145" y="262" font-size="20" fill="url(#goldRing)">★</text>
+  <text x="352" y="262" font-size="20" fill="url(#goldRing)">★</text>
+</svg>

@@ -1,0 +1,149 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --primary-light: #eff6ff;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --accent-light: #ecfdf5;
+    --bg-main: #f8fafc;
+    --card-bg: #ffffff;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+  }
+
+  html, body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* ======================================================== */
+/* BENTO GRID + 3D TACTILE HYBRID DESIGN SYSTEM            */
+/* ======================================================== */
+
+/* 1. Bento Grid Architecture */
+.bento-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1.25rem;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bento-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 24px -4px rgba(37, 99, 235, 0.08), 0 2px 6px -1px rgba(16, 185, 129, 0.04);
+  transform: translateY(-1.5px);
+}
+
+.bento-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 60%, #eff6ff 100%);
+  border: 1px solid #dbeafe;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px -2px rgba(37, 99, 235, 0.08);
+}
+
+/* 2. Soft 3D Tactile Buttons & Controls */
+.tactile-btn {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px 0 rgba(15, 23, 42, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.tactile-btn:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 8px -1px rgba(15, 23, 42, 0.08), inset 0 1px 0 0 rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+}
+.tactile-btn:active, .tactile-pressed {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 5px 0 rgba(15, 23, 42, 0.12), inset 0 1px 2px 0 rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Colored Tactile Buttons */
+.tactile-btn-primary {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  border: 1px solid #1e40af;
+  box-shadow: 0 3px 6px -1px rgba(37, 99, 235, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+}
+.tactile-btn-primary:hover {
+  background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 6px 14px -2px rgba(37, 99, 235, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+.tactile-btn-primary:active {
+  background: #1e40af;
+  box-shadow: inset 0 3px 6px 0 rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(1px);
+}
+
+.tactile-btn-emerald {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  border: 1px solid #047857;
+  box-shadow: 0 3px 6px -1px rgba(16, 185, 129, 0.35), inset 0 1px 0 0 rgba(255, 255, 255, 0.25);
+}
+.tactile-btn-emerald:hover {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+  box-shadow: 0 6px 14px -2px rgba(16, 185, 129, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+.tactile-btn-emerald:active {
+  background: #047857;
+  box-shadow: inset 0 3px 6px 0 rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(1px);
+}
+
+/* 3. Sunken Inset Well (For inputs, active toggles, counters) */
+.tactile-well {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: inset 0 2px 4px 0 rgba(15, 23, 42, 0.04);
+}
+
+/* 4. Hardware LED Glow Dots */
+.led-pulse-emerald {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: #10b981;
+  box-shadow: 0 0 6px #10b981, 0 0 12px rgba(16, 185, 129, 0.4);
+  animation: ledPulse 2s infinite ease-in-out;
+}
+.led-pulse-blue {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: #2563eb;
+  box-shadow: 0 0 6px #2563eb, 0 0 12px rgba(37, 99, 235, 0.4);
+}
+
+@keyframes ledPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.92); }
+}
+
+/* Custom scrollbars and print styling */
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
