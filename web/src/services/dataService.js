@@ -107,12 +107,57 @@ export const subscribeToCloudData = (onDataReceived, onError) => {
   }
 };
 
-// Sync updates to Cloud Firestore
+// Sync updates to Cloud Firestore across clean individual collections & aggregate
 export const syncToCloud = async (data) => {
   if (!USE_FIREBASE || !db) return;
   try {
+    // 1. Maintain instant real-time sync document
     const docRef = doc(db, FIRESTORE_COLLECTION, FIRESTORE_DOC_ID);
     await setDoc(docRef, data, { merge: true });
+
+    // 2. Synchronize into clean, individual, human-readable collections
+    if (data.firmProfile) {
+      await setDoc(doc(db, 'firm_profile', 'main'), {
+        ...data.firmProfile,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    }
+
+    if (Array.isArray(data.builders)) {
+      for (const b of data.builders) {
+        if (b && b.id) await setDoc(doc(db, 'builders', b.id), b, { merge: true });
+      }
+    }
+
+    if (Array.isArray(data.sites)) {
+      for (const s of data.sites) {
+        if (s && s.id) await setDoc(doc(db, 'sites', s.id), s, { merge: true });
+      }
+    }
+
+    if (Array.isArray(data.workers)) {
+      for (const w of data.workers) {
+        if (w && w.id) await setDoc(doc(db, 'workers', w.id), w, { merge: true });
+      }
+    }
+
+    if (Array.isArray(data.dailyWork)) {
+      for (const dw of data.dailyWork) {
+        if (dw && dw.id) await setDoc(doc(db, 'daily_work', dw.id), dw, { merge: true });
+      }
+    }
+
+    if (Array.isArray(data.attendance)) {
+      for (const a of data.attendance) {
+        if (a && a.id) await setDoc(doc(db, 'attendance', a.id), a, { merge: true });
+      }
+    }
+
+    if (Array.isArray(data.advances)) {
+      for (const adv of data.advances) {
+        if (adv && adv.id) await setDoc(doc(db, 'advances', adv.id), adv, { merge: true });
+      }
+    }
   } catch (err) {
     console.warn("Cloud Firestore auto-save notice:", err.message);
   }
