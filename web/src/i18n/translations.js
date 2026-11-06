@@ -91,7 +91,7 @@ export const translations = {
     advanceHistory: "उचल इतिहास",
 
     // Reports
-    reportsTitle: "४-स्तरीय हिशोब अहवाल (Reports Engine)",
+    reportsTitle: "हिशोब अहवाल (Reports Engine)",
     tabDaily: "दैनिक (Daily)",
     tabWeekly: "साप्ताहिक (Weekly)",
     tabMonthly: "मासिक (Monthly)",
@@ -105,7 +105,7 @@ export const translations = {
 
     // Builders Master
     buildersTitle: "बिल्डर्स व सिव्हिल इंजिनिअर्स यादी",
-    buildersSub: "१५+ नोंदणीकृत बिल्डर व इंजिनिअर्स, त्यांच्या चालू साईट्स आणि मासिक कामाचा हिशोब",
+    buildersSub: "नोंदणीकृत बिल्डर व इंजिनिअर्स, त्यांच्या चालू साईट्स आणि मासिक कामाचा हिशोब",
     addBuilder: "नवीन बिल्डर / इंजिनिअर जोडा",
     editBuilder: "बिल्डर / इंजिनिअर माहिती बदला",
     firmNameInput: "फर्म / कन्स्ट्रक्शनचे नाव",
@@ -122,7 +122,7 @@ export const translations = {
     // Dynamic Work Category
     addCategoryBtn: "+ नवीन काम प्रकार",
     categoryModalTitle: "नवीन कामाचा प्रकार जोडा",
-    categoryModalSub: "७ मुख्य प्रकारांव्यतिरिक्त नवीन सिव्हिल किंवा प्लंबिंग काम जोडा.",
+    categoryModalSub: "नवीन सिव्हिल किंवा प्लंबिंग कामाचा प्रकार जोडा.",
     categoryNameLabel: "कामाचे नाव",
     unitLabel: "एकक / युनिट",
     defaultRateLabel: "डीफॉल्ट दर (₹)",
@@ -254,7 +254,7 @@ export const translations = {
     saveAdvance: "Save Advance",
     advanceHistory: "Advance Payout History",
 
-    reportsTitle: "4-Tier Financial & Labour Reports",
+    reportsTitle: "Financial & Labour Reports",
     tabDaily: "Daily",
     tabWeekly: "Weekly",
     tabMonthly: "Monthly",
@@ -268,7 +268,7 @@ export const translations = {
 
     // Builders Master
     buildersTitle: "Builders & Civil Engineers Master",
-    buildersSub: "15+ Registered Builders & Engineers, Active Sites & Monthly Invoices",
+    buildersSub: "Registered Builders & Engineers, Active Sites & Monthly Invoices",
     addBuilder: "Add New Builder / Engineer",
     editBuilder: "Edit Builder / Engineer Info",
     firmNameInput: "Firm / Construction Name",
@@ -285,7 +285,7 @@ export const translations = {
     // Dynamic Work Category
     addCategoryBtn: "+ Add Work Category",
     categoryModalTitle: "Add New Work Category",
-    categoryModalSub: "Add new civil or plumbing category beyond the 7 core defaults.",
+    categoryModalSub: "Add new custom civil or plumbing work category.",
     categoryNameLabel: "Category Name",
     unitLabel: "Unit of Measurement",
     defaultRateLabel: "Default Rate (₹)",

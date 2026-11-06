@@ -239,7 +239,7 @@ export const DashboardPage = () => {
               <h3 className="text-sm font-extrabold text-slate-800">
                 चालू साईट्स व कामाची स्थिती (Active Sites)
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">४ ते ५ साईट्सवरील काम व हजेरीचा तपशील</p>
+              <p className="text-xs text-slate-400 mt-0.5">चालू साईट्सवरील काम व हजेरीचा तपशील</p>
             </div>
             <button
               onClick={() => setActiveTab('sites')}
