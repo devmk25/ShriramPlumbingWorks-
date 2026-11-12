@@ -26,12 +26,28 @@ export const SitesWorkPage = () => {
 
   // Daily Work Form State
   const [selectedSiteId, setSelectedSiteId] = useState(sites[0]?.id || '');
-  const [selectedCategoryId, setSelectedCategoryId] = useState(workCategories[0]?.id || 'cat_03');
+  const [selectedCategoryId, setSelectedCategoryId] = useState(workCategories[2]?.id || workCategories[0]?.id || 'cat_03');
   const [workDate, setWorkDate] = useState(new Date().toISOString().split('T')[0]);
   const [quantity, setQuantity] = useState('');
   const [rate, setRate] = useState('');
   const [notes, setNotes] = useState('');
   const [logSuccess, setLogSuccess] = useState('');
+
+  // Auto-sync selectedSiteId when sites load from Firebase or site is deleted
+  useEffect(() => {
+    if (sites.length > 0 && (!selectedSiteId || !sites.some(s => s.id === selectedSiteId))) {
+      setSelectedSiteId(sites[0].id);
+    } else if (sites.length === 0 && selectedSiteId) {
+      setSelectedSiteId('');
+    }
+  }, [sites, selectedSiteId]);
+
+  // Auto-sync default builder selection for New Site modal
+  useEffect(() => {
+    if (builders.length > 0 && newSiteBuilderId && !builders.some(b => b.id === newSiteBuilderId)) {
+      setNewSiteBuilderId(builders[0].id);
+    }
+  }, [builders, newSiteBuilderId]);
 
   // Auto-fill rate and unit when category changes
   const activeCategory = workCategories.find(c => c.id === selectedCategoryId) || workCategories[0];
@@ -41,20 +57,25 @@ export const SitesWorkPage = () => {
     if (activeCategory) {
       if (activeCategory.defaultRate > 0) {
         setRate(String(activeCategory.defaultRate));
+      } else {
+        setRate('');
       }
     }
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, activeCategory?.id]);
 
   const calculatedTotal = (Number(quantity) || 0) * (Number(rate) || 0);
 
   const handleCreateSite = (e) => {
     e.preventDefault();
     if (newSiteName.trim()) {
-      addSite({
+      const created = addSite({
         name: newSiteName.trim(),
         builderId: newSiteBuilderId,
         location: newSiteLocation.trim() || 'स्थानिक'
       });
+      if (created?.id) {
+        setSelectedSiteId(created.id);
+      }
       setNewSiteName('');
       setNewSiteLocation('');
       setShowAddSiteModal(false);
@@ -171,6 +192,9 @@ export const SitesWorkPage = () => {
                   onChange={(e) => setSelectedSiteId(e.target.value)}
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-blue-500 outline-hidden cursor-pointer"
                 >
+                  {sites.length === 0 && (
+                    <option value="">-- आधी वरील बटनावरून नवीन साईट जोडा --</option>
+                  )}
                   {sites.map(s => (
                     <option key={s.id} value={s.id}>
                       {s.name} ({s.builderName || s.location})

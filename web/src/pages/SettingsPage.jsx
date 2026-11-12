@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Save, Check, Database, Shield, Building2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { USE_FIREBASE } from '../services/firebaseConfig';
@@ -15,6 +15,17 @@ export const SettingsPage = () => {
     thermalHeader: firmProfile.thermalHeader || '',
     tagline: firmProfile.tagline || ''
   });
+
+  useEffect(() => {
+    setForm({
+      firmName: firmProfile.firmName || '',
+      ownerName: firmProfile.ownerName || '',
+      phone: firmProfile.phone || '',
+      address: firmProfile.address || '',
+      thermalHeader: firmProfile.thermalHeader || '',
+      tagline: firmProfile.tagline || ''
+    });
+  }, [firmProfile]);
 
   const [saved, setSaved] = useState(false);
 

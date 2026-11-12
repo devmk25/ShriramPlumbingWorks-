@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, Clock, XCircle, Save, Calendar, Check, AlertCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -9,25 +9,43 @@ export const AttendancePage = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Local state for all workers' attendance on the selected date
-  const [attendanceState, setAttendanceState] = useState(() => {
-    return workers.reduce((acc, worker) => {
-      // Check if already marked for today
-      const existing = attendance.find(a => a.workerId === worker.id && a.date === new Date().toISOString().split('T')[0]);
-      acc[worker.id] = {
-        status: existing ? existing.status : 'FULL', // Default to FULL for fast 1-tap operation
-        siteId: existing ? existing.siteId : (sites[0]?.id || '')
-      };
-      return acc;
-    }, {});
-  });
+  // Sync local attendance state whenever workers, sites, selectedDate, or cloud attendance change
+  const [attendanceState, setAttendanceState] = useState({});
+
+  useEffect(() => {
+    setAttendanceState(prev => {
+      const next = {};
+      workers.forEach(worker => {
+        const existing = attendance.find(a => a.workerId === worker.id && a.date === selectedDate);
+        if (existing) {
+          next[worker.id] = {
+            status: existing.status,
+            siteId: (existing.siteId && sites.some(s => s.id === existing.siteId))
+              ? existing.siteId
+              : (sites[0]?.id || existing.siteId || '')
+          };
+        } else if (prev[worker.id] && (!prev[worker.id].siteId || sites.some(s => s.id === prev[worker.id].siteId))) {
+          next[worker.id] = {
+            status: prev[worker.id].status || 'FULL',
+            siteId: prev[worker.id].siteId || sites[0]?.id || ''
+          };
+        } else {
+          next[worker.id] = {
+            status: 'FULL',
+            siteId: sites[0]?.id || ''
+          };
+        }
+      });
+      return next;
+    });
+  }, [workers, sites, attendance, selectedDate]);
 
   const handleStatusChange = (workerId, status) => {
     setAttendanceState(prev => ({
       ...prev,
       [workerId]: {
-        ...prev[workerId],
-        status
+        status,
+        siteId: prev[workerId]?.siteId || sites[0]?.id || ''
       }
     }));
   };
@@ -36,29 +54,37 @@ export const AttendancePage = () => {
     setAttendanceState(prev => ({
       ...prev,
       [workerId]: {
-        ...prev[workerId],
+        status: prev[workerId]?.status || 'FULL',
         siteId
       }
     }));
   };
 
   const handleSaveAll = () => {
-    const payload = Object.keys(attendanceState).map(workerId => ({
-      workerId,
-      siteId: attendanceState[workerId].siteId,
-      date: selectedDate,
-      status: attendanceState[workerId].status
-    }));
+    if (workers.length === 0) {
+      alert("हजेरी नोंदवण्यासाठी कृपया आधी कामगार जोडा.");
+      return;
+    }
+
+    const payload = workers.map(worker => {
+      const rec = attendanceState[worker.id] || { status: 'FULL', siteId: sites[0]?.id || '' };
+      return {
+        workerId: worker.id,
+        siteId: rec.siteId || sites[0]?.id || '',
+        date: selectedDate,
+        status: rec.status || 'FULL'
+      };
+    });
 
     saveBulkAttendance(payload);
     setSuccessMessage(t.attendanceSavedSuccess);
     setTimeout(() => setSuccessMessage(''), 4000);
   };
 
-  // Quick tally
-  const fullCount = Object.values(attendanceState).filter(s => s.status === 'FULL').length;
-  const halfCount = Object.values(attendanceState).filter(s => s.status === 'HALF').length;
-  const absentCount = Object.values(attendanceState).filter(s => s.status === 'ABSENT').length;
+  // Quick tally across all active workers
+  const fullCount = workers.filter(w => (attendanceState[w.id]?.status || 'FULL') === 'FULL').length;
+  const halfCount = workers.filter(w => attendanceState[w.id]?.status === 'HALF').length;
+  const absentCount = workers.filter(w => attendanceState[w.id]?.status === 'ABSENT').length;
 
   return (
     <div className="space-y-6">

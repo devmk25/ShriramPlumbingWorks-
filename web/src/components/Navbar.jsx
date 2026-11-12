@@ -7,7 +7,7 @@ export const Navbar = () => {
   const { firmProfile } = data;
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs no-print">
       {/* Brand & Subtitle */}
       <div className="flex items-center gap-3">
         <div className="relative">

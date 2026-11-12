@@ -2,10 +2,15 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Printer, Download, FileText, CheckCircle2, AlertTriangle, Maximize2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
-export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) => {
+export const ThermalReceiptModal = ({ workerId, month = null, onClose }) => {
   const { data, calculateWorkerKhata, t } = useApp();
   const [printFormat, setPrintFormat] = useState('80mm'); // '80mm' | 'a4'
+  const [activeFilter, setActiveFilter] = useState(month || '');
   const printRef = useRef(null);
+
+  useEffect(() => {
+    setActiveFilter(month || '');
+  }, [month]);
 
   // Close on Escape key press
   useEffect(() => {
@@ -18,11 +23,14 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const khata = calculateWorkerKhata(workerId, month);
+  const khata = calculateWorkerKhata(workerId, activeFilter || null);
   if (!khata) return null;
 
   const { worker, fullDays, halfDays, totalDaysEquivalent, dailyRate, openingBalance, currentWagesEarned, totalPayableBeforeAdvances, totalAdvancesTaken, advancesList, netCashPayable } = khata;
   const { firmProfile } = data;
+  const periodDisplay = activeFilter
+    ? (activeFilter.startsWith('WEEK:') ? `सप्ताह (${activeFilter.slice(5)})` : activeFilter)
+    : 'एकूण हिशोब (All Time)';
 
   const handlePrint = () => {
     window.print();
@@ -32,10 +40,10 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
   const excessAmount = Math.abs(netCashPayable);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col w-screen h-screen bg-slate-900/95 backdrop-blur-md overflow-hidden no-print">
+    <div className="fixed inset-0 z-50 flex flex-col w-screen h-screen bg-slate-900/95 backdrop-blur-md overflow-hidden print-modal-overlay">
       
-      {/* Top Full-Screen Master Header Bar */}
-      <header className="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 text-white z-20">
+      {/* Top Full-Screen Master Header Bar (hidden when printing) */}
+      <header className="h-16 px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0 text-white z-20 no-print">
         
         {/* Left: Document Info */}
         <div className="flex items-center gap-3">
@@ -47,37 +55,56 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
               <span>अधिकृत मजुरी व उचल पावती (Payment Slip)</span>
             </h2>
             <p className="text-xs text-slate-400 font-medium">
-              {worker.fullName} • {month} • {firmProfile.firmName || "श्रीराम प्लंबिंग वर्क्स"}
+              {worker.fullName} • {periodDisplay} • {firmProfile.firmName || "श्रीराम प्लंबिंग वर्क्स"}
             </p>
           </div>
         </div>
 
-        {/* Center: Format Switcher (80mm Thermal vs A4 Letterhead) */}
-        <div className="bg-slate-800 p-1 rounded-xl border border-slate-700 hidden sm:flex items-center gap-1 text-xs font-bold">
-          <button
-            type="button"
-            onClick={() => setPrintFormat('80mm')}
-            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              printFormat === '80mm'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <span>🧾</span>
-            <span>थर्मल पावती (80mm)</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setPrintFormat('a4')}
-            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-              printFormat === 'a4'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <span>📄</span>
-            <span>A4 लेटरहेड (पूर्ण पान)</span>
-          </button>
+        {/* Center: Format Switcher + Period Filter */}
+        <div className="hidden sm:flex items-center gap-2">
+          <input
+            type="month"
+            value={activeFilter && /^\d{4}-\d{2}$/.test(activeFilter) ? activeFilter : ''}
+            onChange={(e) => setActiveFilter(e.target.value)}
+            className="px-2.5 py-1.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-white outline-hidden cursor-pointer"
+            title="महिना निवडा"
+          />
+          {activeFilter && (
+            <button
+              type="button"
+              onClick={() => setActiveFilter('')}
+              className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-[11px] font-bold text-emerald-400"
+              title="संपूर्ण हिशोब पहा"
+            >
+              All Time
+            </button>
+          )}
+          <div className="bg-slate-800 p-1 rounded-xl border border-slate-700 flex items-center gap-1 text-xs font-bold">
+            <button
+              type="button"
+              onClick={() => setPrintFormat('80mm')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                printFormat === '80mm'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>🧾</span>
+              <span>थर्मल पावती (80mm)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPrintFormat('a4')}
+              className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                printFormat === 'a4'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <span>📄</span>
+              <span>A4 लेटरहेड (पूर्ण पान)</span>
+            </button>
+          </div>
         </div>
 
         {/* Right: Print Button + Big Prominent Cross (X) Icon to Close */}
@@ -103,8 +130,8 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
         </div>
       </header>
 
-      {/* Format Toggle for Mobile Screens */}
-      <div className="sm:hidden bg-slate-800/90 p-2 border-b border-slate-700 flex justify-center gap-2 text-xs font-bold shrink-0">
+      {/* Format Toggle for Mobile Screens (hidden when printing) */}
+      <div className="sm:hidden bg-slate-800/90 p-2 border-b border-slate-700 flex justify-center gap-2 text-xs font-bold shrink-0 no-print">
         <button
           type="button"
           onClick={() => setPrintFormat('80mm')}
@@ -126,7 +153,7 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
       </div>
 
       {/* Main Full-Page Canvas Area (Scrollable with ample padding) */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-10 flex justify-center items-start bg-slate-800/60">
+      <div className="flex-1 overflow-y-auto p-4 md:p-10 flex justify-center items-start bg-slate-800/60 print-modal-scroll">
         
         {printFormat === '80mm' ? (
           /* ============================================================== */
@@ -134,7 +161,7 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
           /* ============================================================== */
           <div
             ref={printRef}
-            className="w-full max-w-[390px] bg-white text-slate-900 p-6 rounded-2xl shadow-2xl border border-slate-200 my-4 font-mono text-xs leading-relaxed"
+            className="w-full max-w-[390px] bg-white text-slate-900 p-6 rounded-2xl shadow-2xl border border-slate-200 my-4 font-mono text-xs leading-relaxed print-sheet"
           >
             {/* Header: Logo & Business Branding */}
             <div className="text-center pb-4 border-b-2 border-dashed border-slate-400">
@@ -156,7 +183,7 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
                 {firmProfile.address || "मु. पो. मिरजवाडी, ता. आष्टा, जि. सांगली"} | मो.: {firmProfile.phone || "9999999999"}
               </div>
               <div className="text-[11px] font-bold mt-2 text-blue-900 bg-blue-50 border border-blue-200 py-1 rounded-md font-sans">
-                मासिक मजुरी व उचल हिशोब • {month}
+                मासिक मजुरी व उचल हिशोब • {periodDisplay}
               </div>
             </div>
 
@@ -270,7 +297,7 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
           /* ============================================================== */
           <div
             ref={printRef}
-            className="w-full max-w-4xl bg-white text-slate-900 p-8 md:p-12 rounded-2xl shadow-2xl border border-slate-200 my-4 font-sans text-xs leading-normal"
+            className="w-full max-w-4xl bg-white text-slate-900 p-8 md:p-12 rounded-2xl shadow-2xl border border-slate-200 my-4 font-sans text-xs leading-normal print-sheet"
           >
             {/* Executive Letterhead Header */}
             <div className="border-b-2 border-blue-600 pb-6 mb-6">
@@ -302,7 +329,7 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
                     मोबाईल: {firmProfile.phone || "9999999999"}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-0.5">
-                    पावती क्र.: SPW-{month}-{worker.id?.substring(0, 4)}
+                    पावती क्र.: SPW-{activeFilter || 'ALL'}-{worker.id?.substring(0, 4)}
                   </div>
                 </div>
               </div>
@@ -318,8 +345,8 @@ export const ThermalReceiptModal = ({ workerId, month = "2026-10", onClose }) =>
                 </div>
               </div>
               <div className="md:text-right">
-                <div className="text-slate-400 font-bold uppercase text-[10px]">हिशोब महिना व तारीख:</div>
-                <div className="font-black text-base text-blue-900 mt-0.5">{month}</div>
+                <div className="text-slate-400 font-bold uppercase text-[10px]">हिशोब कालावधी व तारीख:</div>
+                <div className="font-black text-base text-blue-900 mt-0.5">{periodDisplay}</div>
                 <div className="text-xs text-slate-600 mt-1">
                   <strong>दिनांक:</strong> {new Date().toLocaleDateString('mr-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </div>

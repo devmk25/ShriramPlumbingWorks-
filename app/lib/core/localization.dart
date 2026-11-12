@@ -60,7 +60,19 @@ class AppLocale {
       'cash': '💵 रोख (Cash)',
       'upi': '📱 UPI / Online',
       'totalMonthlyBill': 'एकूण मासिक बिल:',
-      'workDetails': 'कामांचा तपशील:'
+      'workDetails': 'कामांचा तपशील:',
+      'addSite': '+ नवीन साईट',
+      'siteName': 'साईटचे नाव *',
+      'siteLocation': 'ठिकाण / पत्ता',
+      'saveSite': 'साईट सेव्ह करा',
+      'firmName': 'फर्म / व्यवसायाचे नाव',
+      'ownerName': 'मालकाचे नाव',
+      'contactPhone': 'संपर्क मोबाईल नंबर',
+      'firmAddress': 'पत्ता / कार्यक्षेत्र',
+      'tagline': 'टॅगलाईन',
+      'thermalHeader': 'पावती हेडर मजकूर',
+      'saveSettings': 'सेटिंग्ज सेव्ह करा',
+      'settingsSaved': 'फर्म प्रोफाईल यशस्वीपणे सेव्ह झाली!'
     },
     'en': {
       'appName': 'Shriram Plumbing Works',
@@ -122,7 +134,19 @@ class AppLocale {
       'cash': '💵 Cash',
       'upi': '📱 UPI / Online',
       'totalMonthlyBill': 'Total Monthly Bill:',
-      'workDetails': 'Work Itemized Details:'
+      'workDetails': 'Work Itemized Details:',
+      'addSite': '+ Add Site',
+      'siteName': 'Site Name *',
+      'siteLocation': 'Location / Address',
+      'saveSite': 'Save Site',
+      'firmName': 'Firm / Business Name',
+      'ownerName': 'Owner Name',
+      'contactPhone': 'Contact Phone',
+      'firmAddress': 'Address / Service Area',
+      'tagline': 'Business Tagline',
+      'thermalHeader': 'Slip Header Text',
+      'saveSettings': 'Save Settings',
+      'settingsSaved': 'Firm profile saved successfully!'
     }
   };
 

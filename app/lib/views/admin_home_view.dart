@@ -52,8 +52,11 @@ class _AdminHomeViewState extends State<AdminHomeView> {
         _advSiteId = provider.sites[0].id;
       }
       if (provider.workCategories.isNotEmpty) {
-        _workCategoryId = provider.workCategories[2].id; // cat_03 Dhumus
-        _workRateController.text = provider.workCategories[2].defaultRate.toString();
+        final defaultCat = provider.workCategories.length > 2
+            ? provider.workCategories[2]
+            : provider.workCategories[0];
+        _workCategoryId = defaultCat.id;
+        _workRateController.text = defaultCat.defaultRate.toString();
       }
       if (provider.workers.isNotEmpty) {
         _advWorkerId = provider.workers[0].id;
@@ -67,11 +70,18 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
   void _initAttendanceDefaults(AppProvider provider) {
     for (var w in provider.workers) {
+      final existing = provider.attendance
+          .where((a) => a.workerId == w.id && a.date == _selectedAttendanceDate)
+          .firstOrNull;
       if (!_workerAttendanceStatus.containsKey(w.id)) {
-        _workerAttendanceStatus[w.id] = 'FULL';
+        _workerAttendanceStatus[w.id] = existing?.status ?? 'FULL';
       }
-      if (!_workerAttendanceSite.containsKey(w.id)) {
-        _workerAttendanceSite[w.id] = provider.sites.isNotEmpty ? provider.sites[0].id : '';
+      final currentSite = _workerAttendanceSite[w.id] ?? '';
+      if (currentSite.isEmpty || !provider.sites.any((s) => s.id == currentSite)) {
+        final savedSiteId = existing?.siteId ?? '';
+        _workerAttendanceSite[w.id] = provider.sites.any((s) => s.id == savedSiteId)
+            ? savedSiteId
+            : (provider.sites.isNotEmpty ? provider.sites[0].id : '');
       }
     }
   }
@@ -199,6 +209,11 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
               ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings_rounded, color: AppTheme.textMuted, size: 20),
+            tooltip: AppLocale.get('settings', lang),
+            onPressed: () => _showFirmSettingsDialog(provider),
           ),
           IconButton(
             icon: const Icon(Icons.power_settings_new_rounded, color: Colors.redAccent, size: 20),
@@ -387,71 +402,84 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: provider.builders.length,
-            itemBuilder: (context, index) {
-              final b = provider.builders[index];
-              final linkedSites = provider.sites.where((s) => s.builderId == b.id).toList();
+          child: provider.builders.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      lang == 'mr'
+                          ? 'अजून कोणताही बिल्डर जोडलेला नाही.\nवर "+ नवीन जोडा" बटनावर क्लिक करा.'
+                          : 'No builders added yet.\nTap "+ Add New" above to register one.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: provider.builders.length,
+                  itemBuilder: (context, index) {
+                    final b = provider.builders[index];
+                    final linkedSites = provider.sites.where((s) => s.builderId == b.id).toList();
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(b.firmName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppTheme.primaryBlue)),
-                                Text(b.engineerName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(b.firmName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppTheme.primaryBlue)),
+                                      Text(b.engineerName, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                    ],
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+                                  onPressed: () {
+                                    provider.deleteBuilder(b.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang == 'mr' ? 'बिल्डर हटवला गेला!' : 'Builder removed!')));
+                                  },
+                                ),
                               ],
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
-                            onPressed: () {
-                              provider.deleteBuilder(b.id);
-                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(lang == 'mr' ? 'बिल्डर हटवला गेला!' : 'Builder removed!')));
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.phone, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(b.phone, style: const TextStyle(fontSize: 11, color: Colors.black87)),
-                          const SizedBox(width: 14),
-                          const Icon(Icons.location_on, size: 14, color: Colors.grey),
-                          const SizedBox(width: 4),
-                          Text(b.location, style: const TextStyle(fontSize: 11, color: Colors.black87)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (linkedSites.isNotEmpty)
-                        Wrap(
-                          spacing: 4,
-                          children: linkedSites.map((s) => Chip(
-                            label: Text(s.name, style: const TextStyle(fontSize: 10)),
-                            backgroundColor: AppTheme.blueLight,
-                            padding: EdgeInsets.zero,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          )).toList(),
+                            const SizedBox(height: 6),
+                            Row(
+                              children: [
+                                const Icon(Icons.phone, size: 14, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Text(b.phone, style: const TextStyle(fontSize: 11, color: Colors.black87)),
+                                const SizedBox(width: 14),
+                                const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                                const SizedBox(width: 4),
+                                Expanded(child: Text(b.location, style: const TextStyle(fontSize: 11, color: Colors.black87))),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (linkedSites.isNotEmpty)
+                              Wrap(
+                                spacing: 4,
+                                children: linkedSites.map((s) => Chip(
+                                  label: Text(s.name, style: const TextStyle(fontSize: 10)),
+                                  backgroundColor: AppTheme.blueLight,
+                                  padding: EdgeInsets.zero,
+                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                )).toList(),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -469,21 +497,30 @@ class _AdminHomeViewState extends State<AdminHomeView> {
             children: [
               Text(AppLocale.get('fastAttendanceTitle', lang), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
               ElevatedButton.icon(
-                onPressed: () {
-                  final records = provider.workers.map((w) {
-                    return {
-                      'workerId': w.id,
-                      'siteId': _workerAttendanceSite[w.id] ?? (provider.sites.isNotEmpty ? provider.sites[0].id : ''),
-                      'date': _selectedAttendanceDate,
-                      'status': _workerAttendanceStatus[w.id] ?? 'FULL',
-                    };
-                  }).toList();
+                onPressed: provider.workers.isEmpty
+                    ? () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(lang == 'mr' ? 'कृपया आधी कामगार जोडा!' : 'Please add workers first!'),
+                            backgroundColor: Colors.orange.shade700,
+                          ),
+                        );
+                      }
+                    : () {
+                        final records = provider.workers.map((w) {
+                          return {
+                            'workerId': w.id,
+                            'siteId': _workerAttendanceSite[w.id] ?? (provider.sites.isNotEmpty ? provider.sites[0].id : ''),
+                            'date': _selectedAttendanceDate,
+                            'status': _workerAttendanceStatus[w.id] ?? 'FULL',
+                          };
+                        }).toList();
 
-                  provider.markAttendance(records);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(lang == 'mr' ? 'सर्व कामगारांची हजेरी सेव्ह झाली!' : 'All attendance saved!'), backgroundColor: AppTheme.accentEmerald),
-                  );
-                },
+                        provider.markAttendance(records);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(lang == 'mr' ? 'सर्व कामगारांची हजेरी सेव्ह झाली!' : 'All attendance saved!'), backgroundColor: AppTheme.accentEmerald),
+                        );
+                      },
                 icon: const Icon(Icons.check, size: 16),
                 label: Text(AppLocale.get('saveAttendance', lang)),
                 style: ElevatedButton.styleFrom(
@@ -495,74 +532,113 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: provider.workers.length,
-            itemBuilder: (context, index) {
-              final worker = provider.workers[index];
-              final currentStatus = _workerAttendanceStatus[worker.id] ?? 'FULL';
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(worker.fullName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
-                          Text('₹${worker.dailyRate.toInt()}/${lang == 'mr' ? 'दिवस' : 'day'}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => setState(() => _workerAttendanceStatus[worker.id] = 'FULL'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: currentStatus == 'FULL' ? AppTheme.accentEmerald : Colors.grey.shade100,
-                                foregroundColor: currentStatus == 'FULL' ? Colors.white : Colors.black87,
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              child: Text(AppLocale.get('fullDay', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => setState(() => _workerAttendanceStatus[worker.id] = 'HALF'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: currentStatus == 'HALF' ? AppTheme.primaryBlue : Colors.grey.shade100,
-                                foregroundColor: currentStatus == 'HALF' ? Colors.white : Colors.black87,
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              child: Text(AppLocale.get('halfDay', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => setState(() => _workerAttendanceStatus[worker.id] = 'ABSENT'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: currentStatus == 'ABSENT' ? Colors.black87 : Colors.grey.shade100,
-                                foregroundColor: currentStatus == 'ABSENT' ? Colors.white : Colors.black87,
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                              ),
-                              child: Text(AppLocale.get('absent', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+          child: provider.workers.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      lang == 'mr'
+                          ? 'हजेरी भरण्यासाठी कृपया आधी "कामगार" टॅबवर जाऊन कामगार जोडा.'
+                          : 'Please add workers first in the Workers tab to mark attendance.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                    ),
                   ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: provider.workers.length,
+                  itemBuilder: (context, index) {
+                    final worker = provider.workers[index];
+                    final currentStatus = _workerAttendanceStatus[worker.id] ?? 'FULL';
+                    final rawSiteId = _workerAttendanceSite[worker.id];
+                    final effectiveSiteId = (rawSiteId != null && provider.sites.any((s) => s.id == rawSiteId))
+                        ? rawSiteId
+                        : (provider.sites.isNotEmpty ? provider.sites[0].id : null);
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(child: Text(worker.fullName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13))),
+                                Text('₹${worker.dailyRate.toInt()}/${lang == 'mr' ? 'दिवस' : 'day'}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
+                              ],
+                            ),
+                            if (provider.sites.isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              DropdownButtonFormField<String>(
+                                key: ValueKey('att_site_${worker.id}_$effectiveSiteId'),
+                                initialValue: effectiveSiteId,
+                                isDense: true,
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  filled: true,
+                                  fillColor: AppTheme.bgLight,
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                ),
+                                items: provider.sites
+                                    .map((s) => DropdownMenuItem(value: s.id, child: Text('📍 ${s.name}', style: const TextStyle(fontSize: 11))))
+                                    .toList(),
+                                onChanged: (val) {
+                                  if (val != null) {
+                                    setState(() => _workerAttendanceSite[worker.id] = val);
+                                  }
+                                },
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () => setState(() => _workerAttendanceStatus[worker.id] = 'FULL'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: currentStatus == 'FULL' ? AppTheme.accentEmerald : Colors.grey.shade100,
+                                      foregroundColor: currentStatus == 'FULL' ? Colors.white : Colors.black87,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                    ),
+                                    child: Text(AppLocale.get('fullDay', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () => setState(() => _workerAttendanceStatus[worker.id] = 'HALF'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: currentStatus == 'HALF' ? AppTheme.primaryBlue : Colors.grey.shade100,
+                                      foregroundColor: currentStatus == 'HALF' ? Colors.white : Colors.black87,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                    ),
+                                    child: Text(AppLocale.get('halfDay', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () => setState(() => _workerAttendanceStatus[worker.id] = 'ABSENT'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: currentStatus == 'ABSENT' ? Colors.black87 : Colors.grey.shade100,
+                                      foregroundColor: currentStatus == 'ABSENT' ? Colors.white : Colors.black87,
+                                      padding: const EdgeInsets.symmetric(vertical: 8),
+                                    ),
+                                    child: Text(AppLocale.get('absent', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -570,7 +646,17 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
   // 4. WORK LOG (DYNAMIC CATEGORY & SITES) TAB
   Widget _buildWorkLogTab(AppProvider provider, String lang) {
-    final activeCat = provider.workCategories.where((c) => c.id == _workCategoryId).firstOrNull ?? provider.workCategories[0];
+    final activeCat = provider.workCategories.where((c) => c.id == _workCategoryId).firstOrNull ??
+        (provider.workCategories.isNotEmpty
+            ? provider.workCategories[0]
+            : WorkCategoryModel(id: 'cat_custom', name: 'काम', unit: 'काम', defaultRate: 0));
+    final effectiveCatId = provider.workCategories.any((c) => c.id == _workCategoryId)
+        ? _workCategoryId
+        : (provider.workCategories.isNotEmpty ? provider.workCategories[0].id : null);
+    final effectiveSiteId = (_workSiteId != null && provider.sites.any((s) => s.id == _workSiteId))
+        ? _workSiteId
+        : (provider.sites.isNotEmpty ? provider.sites[0].id : null);
+
     final qty = double.tryParse(_workQuantityController.text) ?? 0.0;
     final rt = double.tryParse(_workRateController.text) ?? 0.0;
     final totalAmount = qty * rt;
@@ -584,13 +670,44 @@ class _AdminHomeViewState extends State<AdminHomeView> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(AppLocale.get('workLog', lang), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-              TextButton.icon(
-                onPressed: () => _showAddCategoryDialog(provider),
-                icon: const Icon(Icons.add, size: 16),
-                label: Text(AppLocale.get('addCategory', lang)),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _showAddSiteDialog(provider),
+                    icon: const Icon(Icons.add_location_alt_rounded, size: 15),
+                    label: Text(AppLocale.get('addSite', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _showAddCategoryDialog(provider),
+                    icon: const Icon(Icons.add, size: 15),
+                    label: Text(AppLocale.get('addCategory', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
             ],
           ),
+          if (provider.sites.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Wrap(
+              spacing: 6,
+              runSpacing: 4,
+              children: provider.sites.map((s) {
+                return Chip(
+                  label: Text('${s.name} (${s.location})', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600)),
+                  backgroundColor: AppTheme.blueLight,
+                  deleteIcon: const Icon(Icons.close, size: 13, color: Colors.red),
+                  onDeleted: () {
+                    provider.deleteSite(s.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(lang == 'mr' ? 'साईट हटवली!' : 'Site removed!')),
+                    );
+                  },
+                  visualDensity: VisualDensity.compact,
+                );
+              }).toList(),
+            ),
+          ],
           const SizedBox(height: 10),
 
           Container(
@@ -605,28 +722,38 @@ class _AdminHomeViewState extends State<AdminHomeView> {
               children: [
                 // Site Dropdown
                 DropdownButtonFormField<String>(
-                  initialValue: _workSiteId ?? (provider.sites.isNotEmpty ? provider.sites[0].id : null),
+                  key: ValueKey('work_site_$effectiveSiteId'),
+                  initialValue: effectiveSiteId,
+                  hint: Text(
+                    lang == 'mr' ? 'आधी "+ नवीन साईट" वरून साईट जोडा' : 'Tap "+ Add Site" above first',
+                    style: const TextStyle(fontSize: 11),
+                  ),
                   decoration: InputDecoration(
                     labelText: AppLocale.get('selectSite', lang),
                     filled: true,
                     fillColor: AppTheme.bgLight,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
-                  items: provider.sites.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.builderName.isNotEmpty ? s.builderName : s.location})', style: const TextStyle(fontSize: 11)))).toList(),
+                  items: provider.sites
+                      .map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.builderName.isNotEmpty ? s.builderName : s.location})', style: const TextStyle(fontSize: 11))))
+                      .toList(),
                   onChanged: (val) => setState(() => _workSiteId = val),
                 ),
                 const SizedBox(height: 12),
 
                 // Category Dropdown
                 DropdownButtonFormField<String>(
-                  initialValue: _workCategoryId ?? (provider.workCategories.isNotEmpty ? provider.workCategories[0].id : null),
+                  key: ValueKey('work_cat_$effectiveCatId'),
+                  initialValue: effectiveCatId,
                   decoration: InputDecoration(
                     labelText: AppLocale.get('selectCategory', lang),
                     filled: true,
                     fillColor: AppTheme.bgLight,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
-                  items: provider.workCategories.map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.unit})', style: const TextStyle(fontSize: 11)))).toList(),
+                  items: provider.workCategories
+                      .map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.unit})', style: const TextStyle(fontSize: 11))))
+                      .toList(),
                   onChanged: (val) {
                     setState(() {
                       _workCategoryId = val;
@@ -701,8 +828,25 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
                 ElevatedButton(
                   onPressed: () {
-                    final siteId = _workSiteId ?? (provider.sites.isNotEmpty ? provider.sites[0].id : '');
-                    if (siteId.isEmpty) return;
+                    final siteId = effectiveSiteId ?? '';
+                    if (siteId.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(lang == 'mr' ? 'कृपया आधी वरून "+ नवीन साईट" जोडा!' : 'Please add a Site first using "+ Add Site"!'),
+                          backgroundColor: Colors.orange.shade700,
+                        ),
+                      );
+                      return;
+                    }
+                    if (qty <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(lang == 'mr' ? 'कृपया कामाचे योग्य प्रमाण (Quantity) टाका!' : 'Please enter a valid quantity!'),
+                          backgroundColor: Colors.orange.shade700,
+                        ),
+                      );
+                      return;
+                    }
 
                     provider.addDailyWorkLog(
                       siteId: siteId,
@@ -730,17 +874,36 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
           Text(AppLocale.get('recentWorkLogs', lang), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          ...provider.dailyWork.map(
-            (dw) => Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              child: ListTile(
-                title: Text(dw.siteName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                subtitle: Text('${dw.categoryName}: ${dw.quantity.toInt()} ${dw.unit} @ ₹${dw.rate.toInt()} • ${dw.date}', style: const TextStyle(fontSize: 11)),
-                trailing: Text('₹${dw.totalAmount.toInt()}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.accentEmerald)),
+          if (provider.dailyWork.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                lang == 'mr' ? 'अजून कोणतीही काम नोंद नाही.' : 'No work logs yet.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              ),
+            )
+          else
+            ...provider.dailyWork.map(
+              (dw) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: ListTile(
+                  title: Text(dw.siteName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  subtitle: Text('${dw.categoryName}: ${dw.quantity.toInt()} ${dw.unit} @ ₹${dw.rate.toInt()} • ${dw.date}', style: const TextStyle(fontSize: 11)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('₹${dw.totalAmount.toInt()}', style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.accentEmerald)),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                        onPressed: () => provider.deleteDailyWorkLog(dw.id),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -770,95 +933,117 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           ),
         ),
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: provider.workers.length,
-            itemBuilder: (context, index) {
-              final worker = provider.workers[index];
-              final khata = provider.calculateKhata(worker.id);
-              final double netPayable = khata['netPayable'];
-              final bool isExcess = netPayable < 0;
+          child: provider.workers.isEmpty
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text(
+                      lang == 'mr'
+                          ? 'अजून कोणताही कामगार जोडलेला नाही.\nवर "कामगार जोडा" वर क्लिक करा.'
+                          : 'No workers registered yet.\nTap "Add Worker" above.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppTheme.textMuted, fontSize: 13),
+                    ),
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(12),
+                  itemCount: provider.workers.length,
+                  itemBuilder: (context, index) {
+                    final worker = provider.workers[index];
+                    final khata = provider.calculateKhata(worker.id);
+                    final double netPayable = khata['netPayable'];
+                    final bool isExcess = netPayable < 0;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(worker.fullName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(color: AppTheme.blueLight, borderRadius: BorderRadius.circular(8)),
-                            child: Text('₹${worker.dailyRate.toInt()}/${lang == 'mr' ? 'दिवस' : 'day'}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
-                          ),
-                        ],
-                      ),
-                      Text('${worker.skill} • ${lang == 'mr' ? 'मो.' : 'Mo.'}: ${worker.phone}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
-                      const SizedBox(height: 10),
-
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isExcess ? Colors.red.shade50 : AppTheme.emeraldLight,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: isExcess ? Colors.red.shade300 : AppTheme.accentEmerald),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              isExcess ? AppLocale.get('excessAdvance', lang) : AppLocale.get('netPayable', lang),
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isExcess ? Colors.red.shade900 : AppTheme.accentEmerald),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(child: Text(worker.fullName, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900))),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(color: AppTheme.blueLight, borderRadius: BorderRadius.circular(8)),
+                                  child: Text('₹${worker.dailyRate.toInt()}/${lang == 'mr' ? 'दिवस' : 'day'}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 19),
+                                  onPressed: () {
+                                    provider.deleteWorker(worker.id);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(lang == 'mr' ? 'कामगार हटवला!' : 'Worker removed!')),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
-                            Text(
-                              '₹${(isExcess ? -netPayable : netPayable).toInt()} /-',
-                              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: isExcess ? Colors.red.shade700 : AppTheme.accentEmerald),
+                            Text('${worker.skill} • ${lang == 'mr' ? 'मो.' : 'Mo.'}: ${worker.phone}', style: const TextStyle(fontSize: 11, color: AppTheme.textMuted)),
+                            const SizedBox(height: 10),
+
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: isExcess ? Colors.red.shade50 : AppTheme.emeraldLight,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: isExcess ? Colors.red.shade300 : AppTheme.accentEmerald),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    isExcess ? AppLocale.get('excessAdvance', lang) : AppLocale.get('netPayable', lang),
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isExcess ? Colors.red.shade900 : AppTheme.accentEmerald),
+                                  ),
+                                  Text(
+                                    '₹${(isExcess ? -netPayable : netPayable).toInt()} /-',
+                                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: isExcess ? Colors.red.shade700 : AppTheme.accentEmerald),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      _advWorkerId = worker.id;
+                                      _currentIndex = 5; // Advances tab
+                                    });
+                                  },
+                                  icon: const Icon(Icons.payments_rounded, size: 16),
+                                  label: Text(AppLocale.get('giveAdvance', lang)),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(builder: (_) => ThermalSlipView(workerId: worker.id)),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.receipt_long, size: 16),
+                                  label: Text(AppLocale.get('viewSlip', lang)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryBlue,
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _advWorkerId = worker.id;
-                                _currentIndex = 5; // Advances tab
-                              });
-                            },
-                            icon: const Icon(Icons.payments_rounded, size: 16),
-                            label: Text(AppLocale.get('giveAdvance', lang)),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(builder: (_) => ThermalSlipView(workerId: worker.id)),
-                              );
-                            },
-                            icon: const Icon(Icons.receipt_long, size: 16),
-                            label: Text(AppLocale.get('viewSlip', lang)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryBlue,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -866,6 +1051,13 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
   // 6. ADVANCES TAB
   Widget _buildAdvancesTab(AppProvider provider, String lang) {
+    final effectiveWorkerId = (_advWorkerId != null && provider.workers.any((w) => w.id == _advWorkerId))
+        ? _advWorkerId
+        : (provider.workers.isNotEmpty ? provider.workers[0].id : null);
+    final effectiveAdvSiteId = (_advSiteId != null && provider.sites.any((s) => s.id == _advSiteId))
+        ? _advSiteId
+        : (provider.sites.isNotEmpty ? provider.sites[0].id : null);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -885,7 +1077,9 @@ class _AdminHomeViewState extends State<AdminHomeView> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DropdownButtonFormField<String>(
-                  initialValue: _advWorkerId ?? (provider.workers.isNotEmpty ? provider.workers[0].id : null),
+                  key: ValueKey('adv_worker_$effectiveWorkerId'),
+                  initialValue: effectiveWorkerId,
+                  hint: Text(lang == 'mr' ? 'आधी कामगार जोडा' : 'Add worker first', style: const TextStyle(fontSize: 12)),
                   decoration: InputDecoration(
                     labelText: AppLocale.get('selectWorker', lang),
                     filled: true,
@@ -896,6 +1090,22 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                   onChanged: (val) => setState(() => _advWorkerId = val),
                 ),
                 const SizedBox(height: 12),
+
+                if (provider.sites.isNotEmpty) ...[
+                  DropdownButtonFormField<String>(
+                    key: ValueKey('adv_site_$effectiveAdvSiteId'),
+                    initialValue: effectiveAdvSiteId,
+                    decoration: InputDecoration(
+                      labelText: AppLocale.get('selectSite', lang),
+                      filled: true,
+                      fillColor: AppTheme.bgLight,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                    ),
+                    items: provider.sites.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, style: const TextStyle(fontSize: 12)))).toList(),
+                    onChanged: (val) => setState(() => _advSiteId = val),
+                  ),
+                  const SizedBox(height: 12),
+                ],
 
                 TextField(
                   controller: _advAmountController,
@@ -960,13 +1170,24 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
                 ElevatedButton(
                   onPressed: () {
-                    final workerId = _advWorkerId ?? (provider.workers.isNotEmpty ? provider.workers[0].id : '');
+                    final workerId = effectiveWorkerId ?? '';
                     final amount = double.tryParse(_advAmountController.text) ?? 0.0;
-                    if (workerId.isEmpty || amount <= 0) return;
+                    if (workerId.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(lang == 'mr' ? 'कृपया आधी कामगार जोडा!' : 'Please add a worker first!'), backgroundColor: Colors.orange.shade700),
+                      );
+                      return;
+                    }
+                    if (amount <= 0) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(lang == 'mr' ? 'कृपया योग्य रक्कम टाका!' : 'Please enter a valid advance amount!'), backgroundColor: Colors.orange.shade700),
+                      );
+                      return;
+                    }
 
                     provider.addAdvance(
                       workerId: workerId,
-                      siteId: _advSiteId ?? '',
+                      siteId: effectiveAdvSiteId ?? '',
                       date: DateTime.now().toIso8601String().split('T')[0],
                       amount: amount,
                       reason: _advReasonController.text,
@@ -987,17 +1208,36 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
           Text(AppLocale.get('recentAdvances', lang), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          ...provider.advances.map(
-            (adv) => Card(
-              margin: const EdgeInsets.only(bottom: 8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              child: ListTile(
-                title: Text(adv.workerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: Text('${adv.date} • ${adv.reason}', style: const TextStyle(fontSize: 11)),
-                trailing: Text('- ₹${adv.amount.toInt()}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.red)),
+          if (provider.advances.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Text(
+                lang == 'mr' ? 'अजून कोणतीही उचल नोंदवलेली नाही.' : 'No advance records yet.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+              ),
+            )
+          else
+            ...provider.advances.map(
+              (adv) => Card(
+                margin: const EdgeInsets.only(bottom: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                child: ListTile(
+                  title: Text(adv.workerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  subtitle: Text('${adv.date} • ${adv.reason} (${adv.paymentMode})', style: const TextStyle(fontSize: 11)),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('- ₹${adv.amount.toInt()}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.red)),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                        onPressed: () => provider.deleteAdvance(adv.id),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -1005,6 +1245,10 @@ class _AdminHomeViewState extends State<AdminHomeView> {
 
   // 7. REPORTS TAB (WORKER SLIPS & BUILDER INVOICES)
   Widget _buildReportsTab(AppProvider provider, String lang) {
+    final effectiveReportBuilderId = (_selectedReportBuilderId != null && provider.builders.any((b) => b.id == _selectedReportBuilderId))
+        ? _selectedReportBuilderId
+        : (provider.builders.isNotEmpty ? provider.builders[0].id : null);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1038,33 +1282,45 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           const SizedBox(height: 16),
 
           if (_reportsSubTab == 'WORKERS') ...[
-            ...provider.workers.map((w) {
-              final khata = provider.calculateKhata(w.id);
-              return Card(
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: ListTile(
-                  title: Text(w.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  subtitle: Text('${lang == 'mr' ? 'मजुरी' : 'Wages'}: ₹${khata['wagesEarned'].toInt()} • ${lang == 'mr' ? 'उचल' : 'Advance'}: -₹${khata['totalAdvances'].toInt()}', style: const TextStyle(fontSize: 11)),
-                  trailing: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => ThermalSlipView(workerId: w.id)),
-                      );
-                    },
-                    icon: const Icon(Icons.print_rounded, size: 14),
-                    label: Text(AppLocale.get('viewSlip', lang)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryBlue,
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            if (provider.workers.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  lang == 'mr' ? 'पावती पाहण्यासाठी आधी कामगार जोडा.' : 'Add workers first to view wage slips.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppTheme.textMuted, fontSize: 12),
+                ),
+              )
+            else
+              ...provider.workers.map((w) {
+                final khata = provider.calculateKhata(w.id);
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: ListTile(
+                    title: Text(w.fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    subtitle: Text('${lang == 'mr' ? 'मजुरी' : 'Wages'}: ₹${khata['wagesEarned'].toInt()} • ${lang == 'mr' ? 'उचल' : 'Advance'}: -₹${khata['totalAdvances'].toInt()}', style: const TextStyle(fontSize: 11)),
+                    trailing: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => ThermalSlipView(workerId: w.id)),
+                        );
+                      },
+                      icon: const Icon(Icons.print_rounded, size: 14),
+                      label: Text(AppLocale.get('viewSlip', lang)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      ),
                     ),
                   ),
-                ),
-              );
-            }),
+                );
+              }),
           ] else ...[
             DropdownButtonFormField<String>(
-              initialValue: _selectedReportBuilderId ?? (provider.builders.isNotEmpty ? provider.builders[0].id : null),
+              key: ValueKey('rep_builder_$effectiveReportBuilderId'),
+              initialValue: effectiveReportBuilderId,
+              hint: Text(lang == 'mr' ? 'कोणताही बिल्डर नाही' : 'No builders added', style: const TextStyle(fontSize: 11)),
               decoration: InputDecoration(
                 labelText: AppLocale.get('builders', lang),
                 filled: true,
@@ -1076,10 +1332,10 @@ class _AdminHomeViewState extends State<AdminHomeView> {
             ),
             const SizedBox(height: 12),
 
-            if (_selectedReportBuilderId != null) ...[
+            if (effectiveReportBuilderId != null) ...[
               Builder(
                 builder: (context) {
-                  final billing = provider.calculateBuilderBilling(_selectedReportBuilderId!);
+                  final billing = provider.calculateBuilderBilling(effectiveReportBuilderId);
                   if (billing == null) return const SizedBox.shrink();
 
                   final double total = billing['totalBilled'];
@@ -1099,16 +1355,22 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                         const SizedBox(height: 12),
                         Text(AppLocale.get('workDetails', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                         const SizedBox(height: 6),
-                        ...works.map((w) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('${w.categoryName} (${w.quantity.toInt()} ${w.unit})', style: const TextStyle(fontSize: 11)),
-                              Text('₹${w.totalAmount.toInt()}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        )),
+                        if (works.isEmpty)
+                          Text(
+                            lang == 'mr' ? 'या बिल्डरसाठी कोणतीही काम नोंद नाही.' : 'No work logs for this builder yet.',
+                            style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+                          )
+                        else
+                          ...works.map((w) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(child: Text('${w.categoryName} (${w.quantity.toInt()} ${w.unit}) • ${w.siteName}', style: const TextStyle(fontSize: 11))),
+                                Text('₹${w.totalAmount.toInt()}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                          )),
                       ],
                     ),
                   );
@@ -1261,6 +1523,137 @@ class _AdminHomeViewState extends State<AdminHomeView> {
               }
             },
             child: Text(lang == 'mr' ? 'नोंदवा' : 'Register'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Dialog: Add Site
+  void _showAddSiteDialog(AppProvider provider) {
+    final lang = provider.language;
+    final nameCtrl = TextEditingController();
+    final locCtrl = TextEditingController();
+    String selectedBuilderId = provider.builders.isNotEmpty ? provider.builders[0].id : '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(AppLocale.get('addSite', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: InputDecoration(labelText: AppLocale.get('siteName', lang)),
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  initialValue: selectedBuilderId,
+                  decoration: InputDecoration(
+                    labelText: lang == 'mr' ? 'बिल्डर / इंजिनिअर (ऐच्छिक)' : 'Builder / Engineer (Optional)',
+                  ),
+                  items: [
+                    DropdownMenuItem(value: '', child: Text(lang == 'mr' ? '-- सर्वसाधारण / थेट --' : '-- Direct / General --', style: const TextStyle(fontSize: 12))),
+                    ...provider.builders.map(
+                      (b) => DropdownMenuItem(value: b.id, child: Text('${b.firmName} (${b.engineerName})', style: const TextStyle(fontSize: 12))),
+                    ),
+                  ],
+                  onChanged: (val) => setDialogState(() => selectedBuilderId = val ?? ''),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: locCtrl,
+                  decoration: InputDecoration(labelText: AppLocale.get('siteLocation', lang)),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(AppLocale.get('cancel', lang))),
+            ElevatedButton(
+              onPressed: () {
+                if (nameCtrl.text.trim().isNotEmpty) {
+                  final newSite = provider.addSite(
+                    name: nameCtrl.text.trim(),
+                    location: locCtrl.text.trim().isNotEmpty ? locCtrl.text.trim() : (lang == 'mr' ? 'स्थानिक' : 'Local'),
+                    builderId: selectedBuilderId,
+                  );
+                  setState(() {
+                    _workSiteId = newSite.id;
+                    _advSiteId ??= newSite.id;
+                  });
+                  Navigator.of(ctx).pop();
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    SnackBar(content: Text(lang == 'mr' ? 'नवीन साईट जोडली गेली!' : 'New site added!'), backgroundColor: AppTheme.accentEmerald),
+                  );
+                }
+              },
+              child: Text(AppLocale.get('saveSite', lang)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Dialog: Edit Firm Settings
+  void _showFirmSettingsDialog(AppProvider provider) {
+    final lang = provider.language;
+    final profile = provider.firmProfile;
+    final firmCtrl = TextEditingController(text: profile.firmName);
+    final ownerCtrl = TextEditingController(text: profile.ownerName);
+    final phoneCtrl = TextEditingController(text: profile.phone);
+    final addressCtrl = TextEditingController(text: profile.address);
+    final taglineCtrl = TextEditingController(text: profile.tagline);
+    final headerCtrl = TextEditingController(text: profile.thermalHeader);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(AppLocale.get('settings', lang), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: firmCtrl, decoration: InputDecoration(labelText: AppLocale.get('firmName', lang))),
+              const SizedBox(height: 8),
+              TextField(controller: ownerCtrl, decoration: InputDecoration(labelText: AppLocale.get('ownerName', lang))),
+              const SizedBox(height: 8),
+              TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: InputDecoration(labelText: AppLocale.get('contactPhone', lang))),
+              const SizedBox(height: 8),
+              TextField(controller: addressCtrl, decoration: InputDecoration(labelText: AppLocale.get('firmAddress', lang))),
+              const SizedBox(height: 8),
+              TextField(controller: taglineCtrl, decoration: InputDecoration(labelText: AppLocale.get('tagline', lang))),
+              const SizedBox(height: 8),
+              TextField(controller: headerCtrl, decoration: InputDecoration(labelText: AppLocale.get('thermalHeader', lang))),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(AppLocale.get('cancel', lang))),
+          ElevatedButton(
+            onPressed: () {
+              if (firmCtrl.text.trim().isNotEmpty) {
+                provider.updateFirmProfile(
+                  FirmProfile(
+                    firmName: firmCtrl.text.trim(),
+                    ownerName: ownerCtrl.text.trim(),
+                    phone: phoneCtrl.text.trim(),
+                    address: addressCtrl.text.trim(),
+                    tagline: taglineCtrl.text.trim(),
+                    thermalHeader: headerCtrl.text.trim(),
+                  ),
+                );
+                Navigator.of(ctx).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(AppLocale.get('settingsSaved', lang)), backgroundColor: AppTheme.accentEmerald),
+                );
+              }
+            },
+            child: Text(AppLocale.get('saveSettings', lang)),
           ),
         ],
       ),

@@ -27,7 +27,7 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200 p-3.5 shrink-0 h-full flex flex-col justify-between overflow-y-auto">
+    <aside className="w-64 bg-white border-r border-slate-200 p-3.5 shrink-0 h-full flex flex-col justify-between overflow-y-auto no-print">
       <div className="space-y-1">
         <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
           {language === 'mr' ? 'मेनू (MENU)' : 'MAIN MENU'}

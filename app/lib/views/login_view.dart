@@ -98,18 +98,20 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 14),
 
-                  const Text(
-                    'श्रीराम प्लंबिंग वर्क्स',
-                    style: TextStyle(
+                  Text(
+                    AppLocale.get('appName', lang),
+                    style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                       color: AppTheme.textDark,
                     ),
                   ),
-                  const Text(
-                    'मिरजवाडी • कंत्राटदार संतोष मेंगाणे',
+                  Text(
+                    lang == 'mr'
+                        ? 'मिरजवाडी • कंत्राटदार संतोष मेंगाणे'
+                        : 'Mirajwadi • Contractor Santosh Mengane',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.accentEmerald),
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.accentEmerald),
                   ),
                   const SizedBox(height: 32),
 

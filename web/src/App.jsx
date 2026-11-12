@@ -16,14 +16,16 @@ import { ThermalReceiptModal } from './components/ThermalReceiptModal';
 function AppContent() {
   const { currentUser, activeTab, setActiveTab } = useApp();
   const [slipWorkerId, setSlipWorkerId] = useState(null);
+  const [slipMonth, setSlipMonth] = useState(null);
   const [advanceWorkerId, setAdvanceWorkerId] = useState(null);
 
   if (!currentUser) {
     return <LoginPage />;
   }
 
-  const handleOpenSlip = (workerId) => {
+  const handleOpenSlip = (workerId, month = null) => {
     setSlipWorkerId(workerId);
+    setSlipMonth(month);
   };
 
   const handleOpenAdvance = (workerId) => {
@@ -32,38 +34,44 @@ function AppContent() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-50 font-sans">
-      <Navbar />
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-50 font-sans print-root">
+      <div className={slipWorkerId ? 'flex-1 flex flex-col overflow-hidden no-print' : 'flex-1 flex flex-col overflow-hidden'}>
+        <Navbar />
 
-      <div className="flex-1 flex overflow-hidden">
-        <Sidebar />
+        <div className="flex-1 flex overflow-hidden">
+          <Sidebar />
 
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/60">
-          {activeTab === 'dashboard' && <DashboardPage />}
-          {activeTab === 'builders' && <BuildersPage />}
-          {activeTab === 'sites' && <SitesWorkPage />}
-          {activeTab === 'attendance' && <AttendancePage />}
-          {activeTab === 'workers' && (
-            <WorkersPage
-              onOpenAdvanceModal={handleOpenAdvance}
-              onOpenSlipModal={handleOpenSlip}
-            />
-          )}
-          {activeTab === 'advances' && (
-            <AdvancesPage preselectedWorkerId={advanceWorkerId} />
-          )}
-          {activeTab === 'reports' && (
-            <ReportsPage onOpenSlipModal={handleOpenSlip} />
-          )}
-          {activeTab === 'settings' && <SettingsPage />}
-        </main>
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/60">
+            {activeTab === 'dashboard' && <DashboardPage />}
+            {activeTab === 'builders' && <BuildersPage />}
+            {activeTab === 'sites' && <SitesWorkPage />}
+            {activeTab === 'attendance' && <AttendancePage />}
+            {activeTab === 'workers' && (
+              <WorkersPage
+                onOpenAdvanceModal={handleOpenAdvance}
+                onOpenSlipModal={(id) => handleOpenSlip(id, null)}
+              />
+            )}
+            {activeTab === 'advances' && (
+              <AdvancesPage preselectedWorkerId={advanceWorkerId} />
+            )}
+            {activeTab === 'reports' && (
+              <ReportsPage onOpenSlipModal={handleOpenSlip} />
+            )}
+            {activeTab === 'settings' && <SettingsPage />}
+          </main>
+        </div>
       </div>
 
       {/* 58mm / 80mm Thermal & A4 Receipt Print Modal */}
       {slipWorkerId && (
         <ThermalReceiptModal
           workerId={slipWorkerId}
-          onClose={() => setSlipWorkerId(null)}
+          month={slipMonth}
+          onClose={() => {
+            setSlipWorkerId(null);
+            setSlipMonth(null);
+          }}
         />
       )}
     </div>

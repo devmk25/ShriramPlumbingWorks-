@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Coins, Plus, Calendar, Check, ArrowDownLeft, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Coins, Plus, Calendar, Check, ArrowDownLeft, Shield, Trash2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export const AdvancesPage = ({ preselectedWorkerId }) => {
-  const { data, addAdvance, t } = useApp();
+  const { data, addAdvance, deleteAdvance, t } = useApp();
   const { workers, sites, advances } = data;
 
   const [selectedWorkerId, setSelectedWorkerId] = useState(preselectedWorkerId || workers[0]?.id || '');
@@ -13,6 +13,25 @@ export const AdvancesPage = ({ preselectedWorkerId }) => {
   const [reason, setReason] = useState('घरखर्च उचल');
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [success, setSuccess] = useState('');
+
+  // Auto-sync selected worker and site when Firebase updates asynchronously
+  useEffect(() => {
+    if (preselectedWorkerId && workers.some(w => w.id === preselectedWorkerId)) {
+      setSelectedWorkerId(preselectedWorkerId);
+    } else if (workers.length > 0 && (!selectedWorkerId || !workers.some(w => w.id === selectedWorkerId))) {
+      setSelectedWorkerId(workers[0].id);
+    } else if (workers.length === 0 && selectedWorkerId) {
+      setSelectedWorkerId('');
+    }
+  }, [workers, preselectedWorkerId, selectedWorkerId]);
+
+  useEffect(() => {
+    if (sites.length > 0 && (!selectedSiteId || !sites.some(s => s.id === selectedSiteId))) {
+      setSelectedSiteId(sites[0].id);
+    } else if (sites.length === 0 && selectedSiteId) {
+      setSelectedSiteId('');
+    }
+  }, [sites, selectedSiteId]);
 
   const quickAmounts = [200, 500, 1000, 2000, 5000];
 
@@ -84,6 +103,9 @@ export const AdvancesPage = ({ preselectedWorkerId }) => {
                 onChange={(e) => setSelectedWorkerId(e.target.value)}
                 className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-blue-500 outline-hidden cursor-pointer"
               >
+                {workers.length === 0 && (
+                  <option value="">-- आधी कामगार जोडा --</option>
+                )}
                 {workers.map(w => (
                   <option key={w.id} value={w.id}>
                     {w.fullName} (दर: ₹{w.dailyRate})
@@ -102,6 +124,7 @@ export const AdvancesPage = ({ preselectedWorkerId }) => {
                   onChange={(e) => setSelectedSiteId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-blue-500 outline-hidden cursor-pointer"
                 >
+                  {sites.length === 0 && <option value="">ऑफिस / सर्वसाधारण</option>}
                   {sites.map(s => (
                     <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
@@ -216,7 +239,7 @@ export const AdvancesPage = ({ preselectedWorkerId }) => {
                   <th className="pb-2.5">कामगार</th>
                   <th className="pb-2.5">रक्कम</th>
                   <th className="pb-2.5">कारण</th>
-                  <th className="pb-2.5 text-right">प्रकार</th>
+                  <th className="pb-2.5 text-right">प्रकार / कृती</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
@@ -234,9 +257,23 @@ export const AdvancesPage = ({ preselectedWorkerId }) => {
                       <td className="py-3 font-extrabold text-red-600">₹{item.amount?.toLocaleString()}</td>
                       <td className="py-3 text-slate-600">{item.reason}</td>
                       <td className="py-3 text-right">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                          {item.paymentMode === 'CASH' ? 'रोख' : 'UPI'}
-                        </span>
+                        <div className="inline-flex items-center gap-2">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                            {item.paymentMode === 'CASH' ? 'रोख' : 'UPI'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`₹${item.amount} उचल नोंद हटवायची का?`)) {
+                                deleteAdvance(item.id);
+                              }
+                            }}
+                            className="p-1 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                            title="उचल नोंद हटवा"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

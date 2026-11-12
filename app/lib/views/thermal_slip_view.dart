@@ -12,6 +12,7 @@ class ThermalSlipView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<AppProvider>(context);
+    final lang = provider.language;
     final khata = provider.calculateKhata(workerId);
     final Worker worker = khata['worker'];
     final profile = provider.firmProfile;
@@ -20,19 +21,28 @@ class ThermalSlipView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('अधिकृत पावती (Payment Slip)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+        title: Text(
+          lang == 'mr' ? 'अधिकृत पावती (Payment Slip)' : 'Official Payment Slip',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded, size: 24),
           onPressed: () => Navigator.of(context).pop(),
-          tooltip: 'बंद करा (Close)',
+          tooltip: lang == 'mr' ? 'बंद करा (Close)' : 'Close',
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.print_rounded, color: AppTheme.primaryBlue),
-            tooltip: 'प्रिंट करा (Print)',
+            tooltip: lang == 'mr' ? 'प्रिंट करा (Print)' : 'Print',
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('प्रिंटरला पावती पाठवली जात आहे... (Printing Slip)')),
+                SnackBar(
+                  content: Text(
+                    lang == 'mr'
+                        ? 'प्रिंटरला पावती पाठवली जात आहे... (Printing Slip)'
+                        : 'Preparing slip for print...',
+                  ),
+                ),
               );
             },
           ),
@@ -78,7 +88,7 @@ class ThermalSlipView extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: AppTheme.primaryBlue),
                 ),
                 Text(
-                  'प्रो.: ${profile.ownerName} • ${profile.phone}',
+                  '${lang == 'mr' ? 'प्रो.' : 'Prop.'}: ${profile.ownerName} • ${profile.phone}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
@@ -99,31 +109,40 @@ class ThermalSlipView extends StatelessWidget {
                     color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Text(
-                    'मासिक मजुरी व उचल हिशोब पावती',
+                  child: Text(
+                    profile.thermalHeader.isNotEmpty
+                        ? profile.thermalHeader
+                        : (lang == 'mr' ? 'मासिक मजुरी व उचल हिशोब पावती' : 'Monthly Wage & Advance Settlement Slip'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black87),
+                    style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.black87),
                   ),
                 ),
                 const Divider(thickness: 1, height: 16),
 
                 // Worker info
-                _row('कामगार:', worker.fullName, isBold: true),
-                _row('कौशल्य / काम:', worker.skill),
-                _row('रोजंदारी दर:', '₹${worker.dailyRate.toInt()} / दिवस'),
-                _row('हजेरी तपशील:', '${khata['fullDays']} Full + ${khata['halfDays']} Half = ${khata['totalDaysEquiv']} दिवस'),
+                _row(lang == 'mr' ? 'कामगार:' : 'Worker:', worker.fullName, isBold: true),
+                _row(lang == 'mr' ? 'कौशल्य / काम:' : 'Skill / Role:', worker.skill),
+                _row(lang == 'mr' ? 'रोजंदारी दर:' : 'Daily Rate:', '₹${worker.dailyRate.toInt()} / ${lang == 'mr' ? 'दिवस' : 'day'}'),
+                _row(
+                  lang == 'mr' ? 'हजेरी तपशील:' : 'Attendance:',
+                  '${khata['fullDays']} Full + ${khata['halfDays']} Half = ${khata['totalDaysEquiv']} ${lang == 'mr' ? 'दिवस' : 'days'}',
+                ),
                 const Divider(thickness: 1, height: 16),
 
                 // Calculations
-                _row('चालू महिन्याची मजुरी:', '₹${khata['wagesEarned'].toInt()}'),
-                _row('मागील शिल्लक बाकी:', '₹${khata['openingBalance'].toInt()}'),
-                _row('एकूण देय मजुरी:', '₹${(khata['wagesEarned'] + khata['openingBalance']).toInt()}', isBold: true),
+                _row(lang == 'mr' ? 'चालू महिन्याची मजुरी:' : 'Wages Earned:', '₹${khata['wagesEarned'].toInt()}'),
+                _row(lang == 'mr' ? 'मागील शिल्लक बाकी:' : 'Opening Balance:', '₹${khata['openingBalance'].toInt()}'),
+                _row(
+                  lang == 'mr' ? 'एकूण देय मजुरी:' : 'Gross Payable:',
+                  '₹${(khata['wagesEarned'] + khata['openingBalance']).toInt()}',
+                  isBold: true,
+                ),
                 const Divider(thickness: 1, height: 16),
 
                 // Advances
-                const Text(
-                  'घेतलेली उचल (Advance Breakdown):',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+                Text(
+                  lang == 'mr' ? 'घेतलेली उचल (Advance Breakdown):' : 'Advances Taken (Breakdown):',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
                 ),
                 const SizedBox(height: 4),
                 ...((khata['advancesList'] as List<AdvanceRecord>).map(
@@ -142,7 +161,9 @@ class ThermalSlipView extends StatelessWidget {
                   child: Column(
                     children: [
                       Text(
-                        isExcessAdvance ? '⚠️ अतिरिक्त उचल / मजुराकडे शिल्लक येणे' : '✅ आज हातात द्यायची निव्वळ मजुरी',
+                        isExcessAdvance
+                            ? (lang == 'mr' ? '⚠️ अतिरिक्त उचल / मजुराकडे शिल्लक येणे' : '⚠️ Excess Advance Balance Due')
+                            : (lang == 'mr' ? '✅ आज हातात द्यायची निव्वळ मजुरी' : '✅ Net Cash Payable Today'),
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -159,7 +180,7 @@ class ThermalSlipView extends StatelessWidget {
                       ),
                       if (isExcessAdvance)
                         Text(
-                          '(पुढील महिन्याच्या खात्यावर वर्ग होईल)',
+                          lang == 'mr' ? '(पुढील महिन्याच्या खात्यावर वर्ग होईल)' : '(Carried forward to next month)',
                           style: TextStyle(fontSize: 8, color: Colors.red.shade800),
                         ),
                     ],
@@ -174,13 +195,13 @@ class ThermalSlipView extends StatelessWidget {
                     Column(
                       children: [
                         Text(profile.ownerName, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                        const Text('(कंत्राटदार सही)', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                        Text(lang == 'mr' ? '(कंत्राटदार सही)' : '(Contractor Sign)', style: const TextStyle(fontSize: 9, color: Colors.grey)),
                       ],
                     ),
                     Column(
                       children: [
                         Text(worker.fullName, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                        const Text('(कामगार अंगठा/सही)', style: TextStyle(fontSize: 9, color: Colors.grey)),
+                        Text(lang == 'mr' ? '(कामगार अंगठा/सही)' : '(Worker Sign)', style: const TextStyle(fontSize: 9, color: Colors.grey)),
                       ],
                     ),
                   ],

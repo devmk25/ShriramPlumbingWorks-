@@ -279,6 +279,21 @@ export const AppProvider = ({ children }) => {
     cloudDeleteItem('daily_work', workId);
   };
 
+  // Helper: flexible date matcher supporting Day (YYYY-MM-DD), Week (WEEK:YYYY-MM-DD), Month (YYYY-MM), Year (YYYY)
+  const matchesDateFilter = (recordDate, filterStr) => {
+    if (!filterStr) return true;
+    const d = recordDate || '';
+    if (filterStr.startsWith('WEEK:')) {
+      const endStr = filterStr.slice(5);
+      const endDate = new Date(endStr);
+      const startDate = new Date(endDate);
+      startDate.setDate(endDate.getDate() - 6);
+      const startStr = startDate.toISOString().split('T')[0];
+      return d >= startStr && d <= endStr;
+    }
+    return d.startsWith(filterStr);
+  };
+
   // Builder Invoicing / Billing calculation
   const calculateBuilderBilling = (builderId, monthFilter = null) => {
     const builder = (data.builders || []).find(b => b.id === builderId);
@@ -287,8 +302,7 @@ export const AppProvider = ({ children }) => {
     const works = (data.dailyWork || []).filter(w => {
       const matchBuilder = w.builderId === builderId || (data.sites.find(s => s.id === w.siteId)?.builderId === builderId);
       if (!matchBuilder) return false;
-      if (monthFilter) return w.date.startsWith(monthFilter);
-      return true;
+      return matchesDateFilter(w.date, monthFilter);
     });
 
     const totalBilled = works.reduce((sum, w) => sum + (Number(w.totalAmount) || 0), 0);
@@ -391,13 +405,10 @@ export const AppProvider = ({ children }) => {
     const worker = data.workers.find(w => w.id === workerId);
     if (!worker) return null;
 
-    // Filter attendance by month if specified
+    // Filter attendance by period if specified
     const workerAttendance = data.attendance.filter(a => {
       if (a.workerId !== workerId) return false;
-      if (monthFilter) {
-        return a.date.startsWith(monthFilter);
-      }
-      return true;
+      return matchesDateFilter(a.date, monthFilter);
     });
 
     // Count full & half days
@@ -409,10 +420,7 @@ export const AppProvider = ({ children }) => {
     // Filter advances
     const workerAdvances = data.advances.filter(a => {
       if (a.workerId !== workerId) return false;
-      if (monthFilter) {
-        return a.date.startsWith(monthFilter);
-      }
-      return true;
+      return matchesDateFilter(a.date, monthFilter);
     });
 
     const totalAdvancesTaken = workerAdvances.reduce((sum, a) => sum + (Number(a.amount) || 0), 0);

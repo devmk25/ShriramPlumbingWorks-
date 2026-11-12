@@ -208,12 +208,15 @@ export const subscribeToAllCollections = (callbacks) => {
       }, (err) => console.debug("Advances listener notice:", err.message))
     );
 
-    // 8. Work Categories Listener
+    // 8. Work Categories Listener (Always keep built-in categories merged with custom ones)
     unsubs.push(
       onSnapshot(collection(db, 'work_categories'), (snap) => {
-        if (callbacks.onWorkCategories && !snap.empty) {
-          const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          callbacks.onWorkCategories(list);
+        if (callbacks.onWorkCategories) {
+          const mergedMap = new Map(INITIAL_DATA.workCategories.map(c => [c.id, c]));
+          snap.docs.forEach(d => {
+            mergedMap.set(d.id, { id: d.id, ...d.data() });
+          });
+          callbacks.onWorkCategories(Array.from(mergedMap.values()));
         }
       }, (err) => console.debug("Categories listener notice:", err.message))
     );

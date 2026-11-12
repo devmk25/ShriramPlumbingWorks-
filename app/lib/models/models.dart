@@ -122,6 +122,7 @@ class Worker {
   final double openingBalance;
   final String status;
   final String skill;
+  final String createdAt;
 
   Worker({
     required this.id,
@@ -131,6 +132,7 @@ class Worker {
     required this.openingBalance,
     required this.status,
     required this.skill,
+    this.createdAt = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -142,6 +144,7 @@ class Worker {
       'openingBalance': openingBalance,
       'status': status,
       'skill': skill,
+      'createdAt': createdAt.isNotEmpty ? createdAt : DateTime.now().toIso8601String().split('T')[0],
     };
   }
 
@@ -154,6 +157,7 @@ class Worker {
       openingBalance: (map['openingBalance'] as num?)?.toDouble() ?? 0.0,
       status: map['status'] ?? 'ACTIVE',
       skill: map['skill'] ?? 'कामगार',
+      createdAt: map['createdAt'] ?? '',
     );
   }
 }
@@ -215,6 +219,7 @@ class AdvanceRecord {
   final String workerId;
   final String workerName;
   final String siteId;
+  final String siteName;
   final String date;
   final double amount;
   final String reason;
@@ -225,6 +230,7 @@ class AdvanceRecord {
     required this.workerId,
     required this.workerName,
     required this.siteId,
+    this.siteName = 'ऑफिस / साईट',
     required this.date,
     required this.amount,
     required this.reason,
@@ -237,6 +243,7 @@ class AdvanceRecord {
       'workerId': workerId,
       'workerName': workerName,
       'siteId': siteId,
+      'siteName': siteName,
       'date': date,
       'amount': amount,
       'reason': reason,
@@ -250,6 +257,7 @@ class AdvanceRecord {
       workerId: map['workerId'] ?? '',
       workerName: map['workerName'] ?? '',
       siteId: map['siteId'] ?? '',
+      siteName: map['siteName'] ?? 'ऑफिस / साईट',
       date: map['date'] ?? '',
       amount: (map['amount'] as num?)?.toDouble() ?? 0.0,
       reason: map['reason'] ?? '',

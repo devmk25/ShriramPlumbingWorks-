@@ -46,8 +46,8 @@ export const LoginPage = () => {
               className="w-full h-full object-cover rounded-xl"
             />
           </div>
-          <h2 className="text-xl font-black tracking-tight">श्रीराम प्लंबिंग वर्क्स</h2>
-          <p className="text-blue-100 text-xs mt-1 font-medium">मिरजवाडी • कंत्राटदार संतोष मेंगाणे</p>
+          <h2 className="text-xl font-black tracking-tight">{language === 'mr' ? 'श्रीराम प्लंबिंग वर्क्स' : 'Shriram Plumbing Works'}</h2>
+          <p className="text-blue-100 text-xs mt-1 font-medium">{language === 'mr' ? 'मिरजवाडी • कंत्राटदार संतोष मेंगाणे' : 'Mirajwadi • Contractor Santosh Mengane'}</p>
         </div>
 
         {/* Form Body */}

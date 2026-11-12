@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Printer, Calendar, Download, ChevronRight, CheckCircle2, Building2, Users, Eye, X } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -12,9 +12,29 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
   const [selectedBuilderId, setSelectedBuilderId] = useState(builders?.[0]?.id || '');
   const [builderInvoiceModal, setBuilderInvoiceModal] = useState(null);
 
+  // Auto-sync builder selector when Firebase loads builders asynchronously
+  useEffect(() => {
+    if (builders && builders.length > 0 && (!selectedBuilderId || !builders.some(b => b.id === selectedBuilderId))) {
+      setSelectedBuilderId(builders[0].id);
+    } else if ((!builders || builders.length === 0) && selectedBuilderId) {
+      setSelectedBuilderId('');
+    }
+  }, [builders, selectedBuilderId]);
+
+  // Compute period filter across all 4 reporting tiers (Daily, Weekly, Monthly, Yearly)
+  const todayStr = new Date().toISOString().split('T')[0];
+  const workerPeriodFilter =
+    activeTier === 'daily'
+      ? todayStr
+      : activeTier === 'weekly'
+      ? `WEEK:${todayStr}`
+      : activeTier === 'yearly'
+      ? selectedMonth.substring(0, 4)
+      : selectedMonth;
+
   // Compute aggregated report metrics for workers
   const reportWorkers = workers.map(w => {
-    return calculateWorkerKhata(w.id, activeTier === 'monthly' ? selectedMonth : null);
+    return calculateWorkerKhata(w.id, workerPeriodFilter);
   });
 
   const grandWagesEarned = reportWorkers.reduce((sum, k) => sum + (k?.currentWagesEarned || 0), 0);
@@ -33,6 +53,7 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
 
   return (
     <div className="space-y-6">
+      <div className={builderInvoiceModal ? 'space-y-6 no-print' : 'space-y-6'}>
       {/* Top Banner - Bento Hero */}
       <div className="bento-hero p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
@@ -207,7 +228,7 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
                         </td>
                         <td className="py-3.5 px-5 text-right">
                           <button
-                            onClick={() => onOpenSlipModal(worker.id)}
+                            onClick={() => onOpenSlipModal(worker.id, workerPeriodFilter)}
                             className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center gap-1.5 transition-colors"
                           >
                             <Printer className="w-3.5 h-3.5" />
@@ -238,6 +259,7 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
                 onChange={(e) => setSelectedBuilderId(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-blue-500 outline-hidden"
               >
+                {builders.length === 0 && <option value="">-- बिल्डर उपलब्ध नाही --</option>}
                 {builders.map(b => (
                   <option key={b.id} value={b.id}>
                     {b.firmName} ({b.engineerName}) - {b.location}
@@ -357,12 +379,13 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
           )}
         </div>
       )}
+      </div>
 
       {/* Builder Printable Invoice Modal */}
       {builderInvoiceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 no-print">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 print-modal-overlay">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-slate-200 print-modal-card">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50 no-print">
               <h3 className="text-base font-extrabold text-slate-900">
                 बिल्डर मासिक बिल (Contractor Monthly Invoice)
               </h3>
@@ -374,8 +397,8 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 flex justify-center">
-              <div className="w-full max-w-[580px] bg-white p-8 border border-slate-300 shadow-md font-sans text-xs text-slate-900 leading-normal rounded-xl">
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 flex justify-center print-modal-scroll">
+              <div className="w-full max-w-[580px] bg-white p-8 border border-slate-300 shadow-md font-sans text-xs text-slate-900 leading-normal rounded-xl print-sheet">
                 {/* Letterhead */}
                 <div className="border-b-2 border-blue-600 pb-4 mb-4">
                   <div className="flex justify-between items-start">
@@ -483,7 +506,7 @@ export const ReportsPage = ({ onOpenSlipModal }) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-slate-100">
+            <div className="flex items-center justify-between px-6 py-4 bg-white border-t border-slate-100 no-print">
               <button
                 onClick={() => setBuilderInvoiceModal(null)}
                 className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700"

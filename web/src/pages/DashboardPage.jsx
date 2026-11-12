@@ -31,7 +31,7 @@ export const DashboardPage = () => {
     .reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
   const todayBillingTotal = dailyWork
     .filter(d => d.date === todayStr)
-    .reduce((sum, d) => sum + (Number(d.totalBilling) || 0), 0);
+    .reduce((sum, d) => sum + (Number(d.totalAmount) || Number(d.totalBilling) || 0), 0);
 
   const handleSaveVoiceNote = () => {
     if (voiceNote.trim()) {
@@ -260,9 +260,22 @@ export const DashboardPage = () => {
             ) : (
               sites.map((site) => {
               const siteWork = dailyWork.filter(d => d.siteId === site.id);
-              const totalSqft = siteWork.reduce((sum, d) => sum + (d.dhumusSqft || 0), 0);
-              const totalHoles = siteWork.reduce((sum, d) => sum + (d.coreCuttingHoles || 0), 0);
-              const siteWorkersCount = attendance.filter(a => a.siteId === site.id && a.date === todayStr).length;
+              const totalSqft = siteWork.reduce((sum, d) => {
+                if (d.categoryId === 'cat_03' || d.unit === 'sq.ft') {
+                  return sum + (Number(d.quantity) || Number(d.dhumusSqft) || 0);
+                }
+                return sum + (Number(d.dhumusSqft) || 0);
+              }, 0);
+              const totalHoles = siteWork.reduce((sum, d) => {
+                if (d.categoryId === 'cat_05' || (d.unit && (d.unit.includes('होल') || d.unit.toLowerCase().includes('hole')))) {
+                  return sum + (Number(d.quantity) || Number(d.coreCuttingHoles) || 0);
+                }
+                return sum + (Number(d.coreCuttingHoles) || 0);
+              }, 0);
+              const totalSiteAmount = siteWork.reduce((sum, d) => sum + (Number(d.totalAmount) || Number(d.totalBilling) || 0), 0);
+              const siteWorkersCount = attendance.filter(
+                a => a.siteId === site.id && a.date === todayStr && (a.status === 'FULL' || a.status === 'HALF')
+              ).length;
 
               return (
                 <div
@@ -296,6 +309,10 @@ export const DashboardPage = () => {
                     <div className="text-right pl-3 border-l border-slate-200">
                       <div className="text-slate-400 text-[10px] uppercase font-bold">कोर कटिंग</div>
                       <div className="font-extrabold text-blue-600">{totalHoles} होल्स</div>
+                    </div>
+                    <div className="text-right pl-3 border-l border-slate-200">
+                      <div className="text-slate-400 text-[10px] uppercase font-bold">एकूण बिल</div>
+                      <div className="font-extrabold text-emerald-600">₹{totalSiteAmount.toLocaleString()}</div>
                     </div>
                   </div>
                 </div>

@@ -28,69 +28,64 @@ class AppProvider with ChangeNotifier {
 
     // 2. Builders Collection Stream
     FirebaseService.streamCollection('builders')?.listen((list) {
-      if (list.isNotEmpty) {
-        _builders.clear();
-        _builders.addAll(list.map((m) => BuilderModel.fromMap(m)));
-        notifyListeners();
-      }
+      _builders.clear();
+      _builders.addAll(list.map((m) => BuilderModel.fromMap(m)));
+      notifyListeners();
     }, onError: (_) {});
 
-    // 3. Work Categories Stream
+    // 3. Work Categories Stream (merge defaults + custom from cloud)
     FirebaseService.streamCollection('work_categories')?.listen((list) {
-      if (list.isNotEmpty) {
-        _workCategories.clear();
-        _workCategories.addAll(list.map((m) => WorkCategoryModel.fromMap(m)));
-        notifyListeners();
+      final Map<String, WorkCategoryModel> merged = {
+        for (final cat in _defaultWorkCategories) cat.id: cat,
+      };
+      for (final m in list) {
+        final cat = WorkCategoryModel.fromMap(m);
+        if (cat.id.isNotEmpty) {
+          merged[cat.id] = cat;
+        }
       }
+      _workCategories.clear();
+      _workCategories.addAll(merged.values);
+      notifyListeners();
     }, onError: (_) {});
 
     // 4. Sites Collection Stream
     FirebaseService.streamCollection('sites')?.listen((list) {
-      if (list.isNotEmpty) {
-        _sites.clear();
-        _sites.addAll(list.map((m) => Site.fromMap(m)));
-        notifyListeners();
-      }
+      _sites.clear();
+      _sites.addAll(list.map((m) => Site.fromMap(m)));
+      notifyListeners();
     }, onError: (_) {});
 
     // 5. Workers Collection Stream
     FirebaseService.streamCollection('workers')?.listen((list) {
-      if (list.isNotEmpty) {
-        _workers.clear();
-        _workers.addAll(list.map((m) => Worker.fromMap(m)));
-        notifyListeners();
-      }
+      _workers.clear();
+      _workers.addAll(list.map((m) => Worker.fromMap(m)));
+      notifyListeners();
     }, onError: (_) {});
 
     // 6. Daily Work Stream
     FirebaseService.streamCollection('daily_work')?.listen((list) {
-      if (list.isNotEmpty) {
-        _dailyWork.clear();
-        final mapped = list.map((m) => DailyWorkLog.fromMap(m)).toList();
-        mapped.sort((a, b) => b.date.compareTo(a.date));
-        _dailyWork.addAll(mapped);
-        notifyListeners();
-      }
+      _dailyWork.clear();
+      final mapped = list.map((m) => DailyWorkLog.fromMap(m)).toList();
+      mapped.sort((a, b) => b.date.compareTo(a.date));
+      _dailyWork.addAll(mapped);
+      notifyListeners();
     }, onError: (_) {});
 
     // 7. Attendance Collection Stream
     FirebaseService.streamCollection('attendance')?.listen((list) {
-      if (list.isNotEmpty) {
-        _attendance.clear();
-        _attendance.addAll(list.map((m) => AttendanceRecord.fromMap(m)));
-        notifyListeners();
-      }
+      _attendance.clear();
+      _attendance.addAll(list.map((m) => AttendanceRecord.fromMap(m)));
+      notifyListeners();
     }, onError: (_) {});
 
     // 8. Advances Collection Stream
     FirebaseService.streamCollection('advances')?.listen((list) {
-      if (list.isNotEmpty) {
-        _advances.clear();
-        final mapped = list.map((m) => AdvanceRecord.fromMap(m)).toList();
-        mapped.sort((a, b) => b.date.compareTo(a.date));
-        _advances.addAll(mapped);
-        notifyListeners();
-      }
+      _advances.clear();
+      final mapped = list.map((m) => AdvanceRecord.fromMap(m)).toList();
+      mapped.sort((a, b) => b.date.compareTo(a.date));
+      _advances.addAll(mapped);
+      notifyListeners();
     }, onError: (_) {});
   }
 
@@ -115,7 +110,7 @@ class AppProvider with ChangeNotifier {
 
   final List<BuilderModel> _builders = [];
 
-  final List<WorkCategoryModel> _workCategories = [
+  static final List<WorkCategoryModel> _defaultWorkCategories = [
     WorkCategoryModel(id: 'cat_01', name: 'प्लंबिंग (नवीन कामे)', unit: 'पॉईंट्स / काम', defaultRate: 0),
     WorkCategoryModel(id: 'cat_02', name: 'प्लंबिंग दुरुस्ती', unit: 'व्हिजिट / दिवस', defaultRate: 0),
     WorkCategoryModel(id: 'cat_03', name: 'नवीन साईट धुमसणे (Dhumus Compactor)', unit: 'sq.ft', defaultRate: 4.5),
@@ -124,6 +119,8 @@ class AppProvider with ChangeNotifier {
     WorkCategoryModel(id: 'cat_06', name: 'ब्रेकर फोडकाम (Demolition)', unit: 'तास / दिवस', defaultRate: 0),
     WorkCategoryModel(id: 'cat_07', name: 'वॉल & RCC कटिंग', unit: 'रनिंग फूट (R.ft)', defaultRate: 40),
   ];
+
+  final List<WorkCategoryModel> _workCategories = List.of(_defaultWorkCategories);
 
   final List<Site> _sites = [];
   final List<Worker> _workers = [];
@@ -243,7 +240,7 @@ class AppProvider with ChangeNotifier {
   }
 
   // Add Site
-  void addSite({required String name, required String location, String builderId = ''}) {
+  Site addSite({required String name, required String location, String builderId = ''}) {
     String bName = '';
     if (builderId.isNotEmpty) {
       final b = _builders.where((x) => x.id == builderId).firstOrNull;
@@ -261,9 +258,10 @@ class AppProvider with ChangeNotifier {
       status: 'ACTIVE',
       createdAt: DateTime.now().toIso8601String().split('T')[0],
     );
-    _sites.add(newSite);
+    _sites.insert(0, newSite);
     notifyListeners();
     FirebaseService.saveDoc('sites', newSite.id, newSite.toMap());
+    return newSite;
   }
 
   void deleteSite(String id) {
@@ -277,8 +275,9 @@ class AppProvider with ChangeNotifier {
     final batchItems = <Map<String, dynamic>>[];
 
     for (var rec in records) {
-      final worker = _workers.firstWhere((w) => w.id == rec['workerId']);
-      final site = _sites.firstWhere((s) => s.id == rec['siteId'], orElse: () => _sites.isNotEmpty ? _sites[0] : Site(id: '', name: '', builderId: '', builderName: '', location: '', status: '', createdAt: ''));
+      final worker = _workers.where((w) => w.id == rec['workerId']).firstOrNull;
+      if (worker == null) continue;
+      final site = _sites.where((s) => s.id == rec['siteId']).firstOrNull ?? _sites.firstOrNull;
       final mult = rec['status'] == 'FULL' ? 1.0 : (rec['status'] == 'HALF' ? 0.5 : 0.0);
       final deterministicId = 'att_${rec['workerId']}_${rec['date']}';
       
@@ -288,8 +287,8 @@ class AppProvider with ChangeNotifier {
         id: deterministicId,
         workerId: worker.id,
         workerName: worker.fullName,
-        siteId: site.id,
-        siteName: site.name,
+        siteId: site?.id ?? '',
+        siteName: site != null && site.name.isNotEmpty ? site.name : 'मुख्य साईट',
         date: rec['date'],
         status: rec['status'],
         multiplier: mult,
@@ -300,8 +299,10 @@ class AppProvider with ChangeNotifier {
       batchItems.add(entry.toMap());
     }
     
-    notifyListeners();
-    FirebaseService.batchSaveAttendance(batchItems);
+    if (batchItems.isNotEmpty) {
+      notifyListeners();
+      FirebaseService.batchSaveAttendance(batchItems);
+    }
   }
 
   // Advance (उचल)
@@ -313,12 +314,15 @@ class AppProvider with ChangeNotifier {
     required String reason,
     required String paymentMode,
   }) {
-    final worker = _workers.firstWhere((w) => w.id == workerId);
+    final worker = _workers.where((w) => w.id == workerId).firstOrNull;
+    if (worker == null) return;
+    final site = _sites.where((s) => s.id == siteId).firstOrNull;
     final adv = AdvanceRecord(
       id: 'adv_${DateTime.now().millisecondsSinceEpoch}',
       workerId: worker.id,
       workerName: worker.fullName,
       siteId: siteId,
+      siteName: site != null && site.name.isNotEmpty ? site.name : 'ऑफिस / साईट',
       date: date,
       amount: amount,
       reason: reason,
@@ -356,9 +360,9 @@ class AppProvider with ChangeNotifier {
     final log = DailyWorkLog(
       id: 'dw_${DateTime.now().millisecondsSinceEpoch}',
       builderId: bId,
-      builderName: bName,
+      builderName: bName.isNotEmpty ? bName : 'सर्वसाधारण',
       siteId: site.id,
-      siteName: site.name,
+      siteName: site.name.isNotEmpty ? site.name : 'सर्वसाधारण साईट',
       categoryId: categoryId ?? 'cat_03',
       categoryName: categoryName ?? 'काम',
       date: date,
@@ -398,7 +402,7 @@ class AppProvider with ChangeNotifier {
       status: 'ACTIVE',
       skill: skill,
     );
-    _workers.add(worker);
+    _workers.insert(0, worker);
     notifyListeners();
     FirebaseService.saveDoc('workers', worker.id, worker.toMap());
   }
