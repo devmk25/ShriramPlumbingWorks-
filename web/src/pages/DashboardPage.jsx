@@ -23,9 +23,12 @@ export const DashboardPage = () => {
   const [savedNotes, setSavedNotes] = useState([]);
 
   // Calculations for today
+  const activeWorkerIds = new Set(workers.map(w => w.id));
   const activeSitesCount = sites.filter(s => s.status === 'ACTIVE').length;
   const todayAttendance = attendance.filter(a => a.date === todayStr);
-  const todayWorkersPresent = todayAttendance.filter(a => a.status === 'FULL' || a.status === 'HALF').length;
+  const todayWorkersPresent = todayAttendance.filter(
+    a => activeWorkerIds.has(a.workerId) && (a.status === 'FULL' || a.status === 'HALF')
+  ).length;
   const todayAdvancesTotal = advances
     .filter(a => a.date === todayStr)
     .reduce((sum, a) => sum + (Number(a.amount) || 0), 0);
@@ -274,7 +277,7 @@ export const DashboardPage = () => {
               }, 0);
               const totalSiteAmount = siteWork.reduce((sum, d) => sum + (Number(d.totalAmount) || Number(d.totalBilling) || 0), 0);
               const siteWorkersCount = attendance.filter(
-                a => a.siteId === site.id && a.date === todayStr && (a.status === 'FULL' || a.status === 'HALF')
+                a => activeWorkerIds.has(a.workerId) && a.siteId === site.id && a.date === todayStr && (a.status === 'FULL' || a.status === 'HALF')
               ).length;
 
               return (

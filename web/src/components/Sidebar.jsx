@@ -8,11 +8,11 @@ import {
   Coins, 
   FileText, 
   Settings,
-  UserCheck
+  X
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
-export const Sidebar = () => {
+export const Sidebar = ({ mobileOpen = false, onClose }) => {
   const { activeTab, setActiveTab, t, language } = useApp();
 
   const navItems = [
@@ -26,11 +26,28 @@ export const Sidebar = () => {
     { id: 'settings', label: t.navSettings, icon: Settings },
   ];
 
-  return (
-    <aside className="w-64 bg-white border-r border-slate-200 p-3.5 shrink-0 h-full flex flex-col justify-between overflow-y-auto no-print">
+  const handleSelect = (tabId) => {
+    setActiveTab(tabId);
+    if (onClose) onClose();
+  };
+
+  const renderNavContent = (isMobileDrawer = false) => (
+    <>
       <div className="space-y-1">
-        <div className="px-3 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-          {language === 'mr' ? 'मेनू (MENU)' : 'MAIN MENU'}
+        <div className="px-3 py-2 flex items-center justify-between">
+          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            {language === 'mr' ? 'मेनू (MENU)' : 'MAIN MENU'}
+          </span>
+          {isMobileDrawer && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -38,7 +55,7 @@ export const Sidebar = () => {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleSelect(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 isActive
                   ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
@@ -65,11 +82,37 @@ export const Sidebar = () => {
         })}
       </div>
 
-      {/* Clean Authentic Business Footer (Zero AI Gimmicks) */}
+      {/* Clean Authentic Business Footer */}
       <div className="pt-3 border-t border-slate-100 px-3">
-        <div className="text-xs font-extrabold text-slate-800 tracking-tight">श्रीराम प्लंबिंग वर्क्स</div>
-        <div className="text-[10px] text-slate-500 font-medium mt-0.5">मिरजवाडी • ९९९९९९९९९९</div>
+        <div className="text-xs font-extrabold text-slate-800 tracking-tight">
+          {language === 'mr' ? 'श्रीराम प्लंबिंग वर्क्स' : 'Shriram Plumbing Works'}
+        </div>
+        <div className="text-[10px] text-slate-500 font-medium mt-0.5">
+          {language === 'mr' ? 'मिरजवाडी • ९९९९९९९९९९' : 'Mirajwadi • 9999999999'}
+        </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Static Sidebar */}
+      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 p-3.5 shrink-0 h-full flex-col justify-between overflow-y-auto no-print">
+        {renderNavContent(false)}
+      </aside>
+
+      {/* Mobile Slide-Over Navigation Drawer */}
+      {mobileOpen && (
+        <div className="md:hidden fixed inset-0 z-40 flex no-print">
+          <div
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+            onClick={onClose}
+          />
+          <aside className="relative z-50 w-64 max-w-[80vw] bg-white border-r border-slate-200 p-3.5 h-full flex flex-col justify-between overflow-y-auto shadow-2xl">
+            {renderNavContent(true)}
+          </aside>
+        </div>
+      )}
+    </>
   );
 };

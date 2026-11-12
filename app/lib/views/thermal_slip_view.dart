@@ -192,17 +192,24 @@ class ThermalSlipView extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      children: [
-                        Text(profile.ownerName, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                        Text(lang == 'mr' ? '(कंत्राटदार सही)' : '(Contractor Sign)', style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                      ],
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(profile.ownerName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                          Text(lang == 'mr' ? '(कंत्राटदार सही)' : '(Contractor Sign)', style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                        ],
+                      ),
                     ),
-                    Column(
-                      children: [
-                        Text(worker.fullName, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
-                        Text(lang == 'mr' ? '(कामगार अंगठा/सही)' : '(Worker Sign)', style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                      ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(worker.fullName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold)),
+                          Text(lang == 'mr' ? '(कामगार अंगठा/सही)' : '(Worker Sign)', style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -220,13 +227,19 @@ class ThermalSlipView extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: 10, color: isBold ? AppTheme.textDark : AppTheme.textMuted)),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: AppTheme.textDark,
+          Flexible(
+            child: Text(label, style: TextStyle(fontSize: 10, color: isBold ? AppTheme.textDark : AppTheme.textMuted)),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+                color: AppTheme.textDark,
+              ),
             ),
           ),
         ],

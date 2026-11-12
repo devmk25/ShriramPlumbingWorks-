@@ -294,8 +294,11 @@ class _AdminHomeViewState extends State<AdminHomeView> {
   // 1. DASHBOARD TAB
   Widget _buildDashboardTab(AppProvider provider, String lang) {
     final activeSitesCount = provider.sites.where((s) => s.status == 'ACTIVE').length;
+    final activeWorkerIds = provider.workers.map((w) => w.id).toSet();
     final todayStr = _selectedAttendanceDate;
-    final todayWorkers = provider.attendance.where((a) => a.date == todayStr && (a.status == 'FULL' || a.status == 'HALF')).length;
+    final todayWorkers = provider.attendance
+        .where((a) => activeWorkerIds.contains(a.workerId) && a.date == todayStr && (a.status == 'FULL' || a.status == 'HALF'))
+        .length;
     final todayAdvances = provider.advances.where((a) => a.date == todayStr).fold<double>(0.0, (s, a) => s + a.amount);
     final todayBilling = provider.dailyWork.where((d) => d.date == todayStr).fold<double>(0.0, (s, d) => s + d.totalBilling);
 
@@ -388,7 +391,14 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${AppLocale.get('builders', lang)} (${provider.builders.length})', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+              Expanded(
+                child: Text(
+                  '${AppLocale.get('builders', lang)} (${provider.builders.length})',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showAddBuilderDialog(provider),
                 icon: const Icon(Icons.add_business_rounded, size: 16),
@@ -495,7 +505,14 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(AppLocale.get('fastAttendanceTitle', lang), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+              Expanded(
+                child: Text(
+                  AppLocale.get('fastAttendanceTitle', lang),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: provider.workers.isEmpty
                     ? () {
@@ -576,6 +593,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                               DropdownButtonFormField<String>(
                                 key: ValueKey('att_site_${worker.id}_$effectiveSiteId'),
                                 initialValue: effectiveSiteId,
+                                isExpanded: true,
                                 isDense: true,
                                 decoration: InputDecoration(
                                   contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -584,7 +602,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
                                 ),
                                 items: provider.sites
-                                    .map((s) => DropdownMenuItem(value: s.id, child: Text('📍 ${s.name}', style: const TextStyle(fontSize: 11))))
+                                    .map((s) => DropdownMenuItem(value: s.id, child: Text('📍 ${s.name}', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11))))
                                     .toList(),
                                 onChanged: (val) {
                                   if (val != null) {
@@ -669,21 +687,40 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(AppLocale.get('workLog', lang), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => _showAddSiteDialog(provider),
-                    icon: const Icon(Icons.add_location_alt_rounded, size: 15),
-                    label: Text(AppLocale.get('addSite', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  ),
-                  TextButton.icon(
-                    onPressed: () => _showAddCategoryDialog(provider),
-                    icon: const Icon(Icons.add, size: 15),
-                    label: Text(AppLocale.get('addCategory', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  ),
-                ],
+              Expanded(
+                child: Text(
+                  AppLocale.get('workLog', lang),
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+              ),
+              Flexible(
+                child: Wrap(
+                  spacing: 4,
+                  alignment: WrapAlignment.end,
+                  children: [
+                    TextButton.icon(
+                      onPressed: () => _showAddSiteDialog(provider),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.add_location_alt_rounded, size: 14),
+                      label: Text(AppLocale.get('addSite', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _showAddCategoryDialog(provider),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      icon: const Icon(Icons.add, size: 14),
+                      label: Text(AppLocale.get('addCategory', lang), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -724,8 +761,10 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                 DropdownButtonFormField<String>(
                   key: ValueKey('work_site_$effectiveSiteId'),
                   initialValue: effectiveSiteId,
+                  isExpanded: true,
                   hint: Text(
                     lang == 'mr' ? 'आधी "+ नवीन साईट" वरून साईट जोडा' : 'Tap "+ Add Site" above first',
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontSize: 11),
                   ),
                   decoration: InputDecoration(
@@ -735,7 +774,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                   items: provider.sites
-                      .map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.builderName.isNotEmpty ? s.builderName : s.location})', style: const TextStyle(fontSize: 11))))
+                      .map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.builderName.isNotEmpty ? s.builderName : s.location})', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11))))
                       .toList(),
                   onChanged: (val) => setState(() => _workSiteId = val),
                 ),
@@ -745,6 +784,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                 DropdownButtonFormField<String>(
                   key: ValueKey('work_cat_$effectiveCatId'),
                   initialValue: effectiveCatId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: AppLocale.get('selectCategory', lang),
                     filled: true,
@@ -752,7 +792,7 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
                   items: provider.workCategories
-                      .map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.unit})', style: const TextStyle(fontSize: 11))))
+                      .map((c) => DropdownMenuItem(value: c.id, child: Text('${c.name} (${c.unit})', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11))))
                       .toList(),
                   onChanged: (val) {
                     setState(() {
@@ -919,7 +959,14 @@ class _AdminHomeViewState extends State<AdminHomeView> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${AppLocale.get('workers', lang)} (${provider.workers.length})', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900)),
+              Expanded(
+                child: Text(
+                  '${AppLocale.get('workers', lang)} (${provider.workers.length})',
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+                ),
+              ),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
                 onPressed: () => _showAddWorkerDialog(provider),
                 icon: const Icon(Icons.person_add, size: 16),
@@ -996,10 +1043,13 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
-                                    isExcess ? AppLocale.get('excessAdvance', lang) : AppLocale.get('netPayable', lang),
-                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isExcess ? Colors.red.shade900 : AppTheme.accentEmerald),
+                                  Expanded(
+                                    child: Text(
+                                      isExcess ? AppLocale.get('excessAdvance', lang) : AppLocale.get('netPayable', lang),
+                                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isExcess ? Colors.red.shade900 : AppTheme.accentEmerald),
+                                    ),
                                   ),
+                                  const SizedBox(width: 8),
                                   Text(
                                     '₹${(isExcess ? -netPayable : netPayable).toInt()} /-',
                                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: isExcess ? Colors.red.shade700 : AppTheme.accentEmerald),
@@ -1079,14 +1129,15 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                 DropdownButtonFormField<String>(
                   key: ValueKey('adv_worker_$effectiveWorkerId'),
                   initialValue: effectiveWorkerId,
-                  hint: Text(lang == 'mr' ? 'आधी कामगार जोडा' : 'Add worker first', style: const TextStyle(fontSize: 12)),
+                  isExpanded: true,
+                  hint: Text(lang == 'mr' ? 'आधी कामगार जोडा' : 'Add worker first', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
                   decoration: InputDecoration(
                     labelText: AppLocale.get('selectWorker', lang),
                     filled: true,
                     fillColor: AppTheme.bgLight,
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   ),
-                  items: provider.workers.map((w) => DropdownMenuItem(value: w.id, child: Text(w.fullName, style: const TextStyle(fontSize: 12)))).toList(),
+                  items: provider.workers.map((w) => DropdownMenuItem(value: w.id, child: Text(w.fullName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)))).toList(),
                   onChanged: (val) => setState(() => _advWorkerId = val),
                 ),
                 const SizedBox(height: 12),
@@ -1095,13 +1146,14 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                   DropdownButtonFormField<String>(
                     key: ValueKey('adv_site_$effectiveAdvSiteId'),
                     initialValue: effectiveAdvSiteId,
+                    isExpanded: true,
                     decoration: InputDecoration(
                       labelText: AppLocale.get('selectSite', lang),
                       filled: true,
                       fillColor: AppTheme.bgLight,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
-                    items: provider.sites.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, style: const TextStyle(fontSize: 12)))).toList(),
+                    items: provider.sites.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)))).toList(),
                     onChanged: (val) => setState(() => _advSiteId = val),
                   ),
                   const SizedBox(height: 12),
@@ -1320,14 +1372,15 @@ class _AdminHomeViewState extends State<AdminHomeView> {
             DropdownButtonFormField<String>(
               key: ValueKey('rep_builder_$effectiveReportBuilderId'),
               initialValue: effectiveReportBuilderId,
-              hint: Text(lang == 'mr' ? 'कोणताही बिल्डर नाही' : 'No builders added', style: const TextStyle(fontSize: 11)),
+              isExpanded: true,
+              hint: Text(lang == 'mr' ? 'कोणताही बिल्डर नाही' : 'No builders added', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
               decoration: InputDecoration(
                 labelText: AppLocale.get('builders', lang),
                 filled: true,
                 fillColor: Colors.white,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
-              items: provider.builders.map((b) => DropdownMenuItem(value: b.id, child: Text('${b.firmName} (${b.engineerName})', style: const TextStyle(fontSize: 11)))).toList(),
+              items: provider.builders.map((b) => DropdownMenuItem(value: b.id, child: Text('${b.firmName} (${b.engineerName})', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)))).toList(),
               onChanged: (val) => setState(() => _selectedReportBuilderId = val),
             ),
             const SizedBox(height: 12),
@@ -1552,13 +1605,14 @@ class _AdminHomeViewState extends State<AdminHomeView> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   initialValue: selectedBuilderId,
+                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: lang == 'mr' ? 'बिल्डर / इंजिनिअर (ऐच्छिक)' : 'Builder / Engineer (Optional)',
                   ),
                   items: [
-                    DropdownMenuItem(value: '', child: Text(lang == 'mr' ? '-- सर्वसाधारण / थेट --' : '-- Direct / General --', style: const TextStyle(fontSize: 12))),
+                    DropdownMenuItem(value: '', child: Text(lang == 'mr' ? '-- सर्वसाधारण / थेट --' : '-- Direct / General --', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
                     ...provider.builders.map(
-                      (b) => DropdownMenuItem(value: b.id, child: Text('${b.firmName} (${b.engineerName})', style: const TextStyle(fontSize: 12))),
+                      (b) => DropdownMenuItem(value: b.id, child: Text('${b.firmName} (${b.engineerName})', overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
                     ),
                   ],
                   onChanged: (val) => setDialogState(() => selectedBuilderId = val ?? ''),

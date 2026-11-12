@@ -1,40 +1,50 @@
 import React from 'react';
-import { Globe, LogOut, User, HardHat, Shield } from 'lucide-react';
+import { Globe, LogOut, Shield, Menu } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
-export const Navbar = () => {
+export const Navbar = ({ onToggleMobileNav }) => {
   const { data, language, toggleLanguage, t, currentUser, logout } = useApp();
   const { firmProfile } = data;
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs no-print">
+    <header className="h-16 bg-white border-b border-slate-200 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs no-print gap-2">
       {/* Brand & Subtitle */}
-      <div className="flex items-center gap-3">
-        <div className="relative">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {onToggleMobileNav && (
+          <button
+            type="button"
+            onClick={onToggleMobileNav}
+            className="md:hidden tactile-btn p-2 rounded-xl text-slate-700 hover:text-blue-600 shrink-0"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <div className="relative shrink-0">
           <img
             src="/shriram_logo.jpg"
             alt="श्रीराम प्लंबिंग वर्क्स"
-            className="w-11 h-11 rounded-xl object-cover border border-slate-200 shadow-sm shrink-0"
+            className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl object-cover border border-slate-200 shadow-sm shrink-0"
           />
           <span className="led-pulse-emerald absolute -top-1 -right-1" title="सिस्टम सक्रिय"></span>
         </div>
-        <div>
-          <h1 className="text-base font-extrabold text-slate-900 tracking-tight leading-none flex items-center gap-2">
-            <span>{firmProfile.firmName || t.appName}</span>
+        <div className="min-w-0">
+          <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight leading-none truncate">
+            {firmProfile.firmName || t.appName}
           </h1>
-          <p className="text-[11px] font-semibold text-emerald-600 mt-1 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span>{firmProfile.tagline || t.appSub}</span>
+          <p className="text-[11px] font-semibold text-emerald-600 mt-1 hidden sm:flex items-center gap-1.5 truncate">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+            <span className="truncate">{firmProfile.tagline || t.appSub}</span>
           </p>
         </div>
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Language Switcher - Tactile Rocker Feel */}
         <button
           onClick={toggleLanguage}
-          className="tactile-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-all shadow-xs"
+          className="tactile-btn flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl border border-blue-200 bg-blue-50/70 text-blue-700 hover:bg-blue-100 text-xs font-bold transition-all shadow-xs"
           title="Switch Language"
         >
           <Globe className="w-3.5 h-3.5 text-blue-600" />
@@ -44,7 +54,7 @@ export const Navbar = () => {
         {/* User Badge */}
         {currentUser && (
           <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-            <div className="text-right hidden sm:block">
+            <div className="text-right hidden md:block">
               <div className="text-xs font-bold text-slate-800 leading-tight">
                 {currentUser.fullName}
               </div>
@@ -54,7 +64,7 @@ export const Navbar = () => {
               </div>
             </div>
 
-            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-700 tactile-btn">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-200 hidden sm:flex items-center justify-center text-blue-700 tactile-btn">
               <Shield className="w-4 h-4 text-blue-600" />
             </div>
 

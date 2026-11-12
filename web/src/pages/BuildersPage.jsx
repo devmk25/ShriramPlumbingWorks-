@@ -3,7 +3,7 @@ import { Building2, Plus, Phone, MapPin, Search, Trash2, Edit3, UserCheck, Brief
 import { useApp } from '../context/AppContext';
 
 export const BuildersPage = () => {
-  const { data, addBuilder, updateBuilder, deleteBuilder, setActiveTab, t } = useApp();
+  const { data, addBuilder, updateBuilder, deleteBuilder, setActiveTab, t, language } = useApp();
   const builders = data.builders || [];
   const sites = data.sites || [];
   const dailyWork = data.dailyWork || [];
@@ -311,7 +311,7 @@ export const BuildersPage = () => {
                   type="submit"
                   className="px-5 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md transition-all active:scale-95"
                 >
-                  {editingBuilder ? (t.language === 'en' ? 'Save Changes' : 'बदल सेव्ह करा') : (t.language === 'en' ? 'Register' : 'नोंदवा')}
+                  {editingBuilder ? (language === 'en' ? 'Save Changes' : 'बदल सेव्ह करा') : (language === 'en' ? 'Register' : 'नोंदवा')}
                 </button>
               </div>
             </form>

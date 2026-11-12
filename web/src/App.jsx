@@ -18,6 +18,7 @@ function AppContent() {
   const [slipWorkerId, setSlipWorkerId] = useState(null);
   const [slipMonth, setSlipMonth] = useState(null);
   const [advanceWorkerId, setAdvanceWorkerId] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   if (!currentUser) {
     return <LoginPage />;
@@ -36,10 +37,13 @@ function AppContent() {
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-slate-50 font-sans print-root">
       <div className={slipWorkerId ? 'flex-1 flex flex-col overflow-hidden no-print' : 'flex-1 flex flex-col overflow-hidden'}>
-        <Navbar />
+        <Navbar onToggleMobileNav={() => setMobileNavOpen(prev => !prev)} />
 
         <div className="flex-1 flex overflow-hidden">
-          <Sidebar />
+          <Sidebar
+            mobileOpen={mobileNavOpen}
+            onClose={() => setMobileNavOpen(false)}
+          />
 
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50/60">
             {activeTab === 'dashboard' && <DashboardPage />}

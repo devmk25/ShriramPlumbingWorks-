@@ -419,11 +419,11 @@ export const SitesWorkPage = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                    <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between gap-2">
                       <span className="font-semibold text-slate-700">
                         {item.categoryName}: {item.quantity} {item.unit} @ ₹{item.rate}
                       </span>
-                      <span className="text-[10px] text-slate-400">{item.date}</span>
+                      <span className="text-[10px] text-slate-400 whitespace-nowrap shrink-0">{item.date}</span>
                     </div>
                     {item.notes && (
                       <div className="text-[11px] text-slate-600 italic mt-1 bg-white p-1.5 rounded-md border border-slate-100">
